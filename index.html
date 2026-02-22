@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Webhunk Snippets – Testoverzicht</title>
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Lilita+One&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <header class="dashboard-header">
+        <img class="dashboard-logo" src="assets/logo.png" alt="Webhunk" width="56" height="56" />
+        <h1>Webhunk Snippets</h1>
+      </header>
+      <p class="overview-desc">Kies een snippet om lokaal te testen (XAMPP / localhost).</p>
+      <ul class="snippet-list">
+        <li class="client">Pretparkgids</li>
+        <li>
+          <div class="snippet-card">
+            <a class="snippet-card__link" href="preview/?snippet=pretparkgids/efteling-wachttijden">
+              <div class="snippet-card__pill">WordPress snippet</div>
+              <h2 class="snippet-card__title">Efteling – Wachttijden</h2>
+              <p class="snippet-card__meta">Live wachttijden + favorieten UI zoals op Pretparkgids.</p>
+            </a>
+            <div class="snippet-card__actions">
+              <button type="button" class="snippet-card__build-btn" data-snippet-path="snippets/pretparkgids/efteling-wachttijden" title="Toon code en download bestand">
+                Export voor WordPress
+              </button>
+              <button type="button" class="snippet-card__remove-btn" data-snippet-path="snippets/pretparkgids/efteling-wachttijden" title="Toon opdracht om snippet te verwijderen">
+                Verwijderen
+              </button>
+            </div>
+          </div>
+        </li>
+        <li>
+          <div class="snippet-card">
+            <a class="snippet-card__link" href="preview/?snippet=pretparkgids/efteling-tickets">
+              <div class="snippet-card__pill">WordPress snippet</div>
+              <h2 class="snippet-card__title">Efteling Tickets</h2>
+              <p class="snippet-card__meta">Nieuwe snippet – pas beschrijving aan in index.html.</p>
+            </a>
+            <div class="snippet-card__actions">
+              <button type="button" class="snippet-card__build-btn" data-snippet-path="snippets/pretparkgids/efteling-tickets" title="Toon code en download bestand">
+                Export voor WordPress
+              </button>
+              <button type="button" class="snippet-card__remove-btn" data-snippet-path="snippets/pretparkgids/efteling-tickets" title="Toon opdracht om snippet te verwijderen">
+                Verwijderen
+              </button>
+            </div>
+          </div>
+        </li>
+      </ul>
+
+      <section class="new-snippet">
+        <button type="button" class="new-snippet__open-btn" id="new-snippet-open-btn">Nieuwe snippet aanmaken</button>
+      </section>
+    </div>
+
+    <!-- Keuze-popup: download of code -->
+    <div id="wp-choice-modal" class="wp-modal wp-modal--choice" role="dialog" aria-modal="true" aria-labelledby="wp-choice-title" hidden>
+      <div class="wp-modal__backdrop wp-choice-backdrop"></div>
+      <div class="wp-modal__box wp-modal__box--small">
+        <div class="wp-modal__head">
+          <h2 id="wp-choice-title" class="wp-modal__title">WordPress snippet</h2>
+          <button type="button" class="wp-modal__close wp-choice-close" aria-label="Sluiten">&times;</button>
+        </div>
+        <div class="wp-modal__body">
+          <p class="wp-choice-text">Wat wil je doen?</p>
+          <div class="wp-modal__actions wp-modal__actions--stack">
+            <button type="button" class="wp-modal__btn wp-modal__btn--primary" id="wp-choice-download">Bestand downloaden</button>
+            <button type="button" class="wp-modal__btn wp-modal__btn--secondary" id="wp-choice-code">Code laten zien</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code-popup: volledige code + copy -->
+    <div id="wp-snippet-modal" class="wp-modal" role="dialog" aria-modal="true" aria-labelledby="wp-modal-title" hidden>
+      <div class="wp-modal__backdrop wp-code-backdrop"></div>
+      <div class="wp-modal__box">
+        <div class="wp-modal__head">
+          <h2 id="wp-modal-title" class="wp-modal__title">WordPress snippet – code</h2>
+          <button type="button" class="wp-modal__close wp-code-close" aria-label="Sluiten">&times;</button>
+        </div>
+        <div class="wp-modal__body">
+          <pre class="wp-modal__code"><code id="wp-modal-code"></code></pre>
+          <div class="wp-modal__actions">
+            <button type="button" class="wp-modal__btn wp-modal__btn--primary" id="wp-modal-copy">Copy code</button>
+            <button type="button" class="wp-modal__btn wp-modal__btn--ghost" id="wp-modal-close-btn">Sluiten</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: snippet verwijderen -->
+    <div id="remove-snippet-modal" class="wp-modal" role="dialog" aria-modal="true" aria-labelledby="remove-snippet-modal-title" hidden>
+      <div class="wp-modal__backdrop remove-snippet-backdrop"></div>
+      <div class="wp-modal__box wp-modal__box--small">
+        <div class="wp-modal__head">
+          <h2 id="remove-snippet-modal-title" class="wp-modal__title">Snippet verwijderen</h2>
+          <button type="button" class="wp-modal__close remove-snippet-close" aria-label="Sluiten">&times;</button>
+        </div>
+        <div class="wp-modal__body">
+          <p class="new-snippet__desc">Voer deze opdracht uit in de terminal (vanuit de projectmap) om de snippet-map en de card op het dashboard te verwijderen:</p>
+          <div class="new-snippet__command-wrap">
+            <code class="new-snippet__command" id="remove-snippet-command"></code>
+          </div>
+          <div class="wp-modal__actions">
+            <button type="button" class="wp-modal__btn wp-modal__btn--primary" id="remove-snippet-copy-btn">Kopiëren</button>
+            <button type="button" class="wp-modal__btn wp-modal__btn--ghost" id="remove-snippet-close-btn">Sluiten</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal: nieuwe snippet aanmaken -->
+    <div id="new-snippet-modal" class="wp-modal" role="dialog" aria-modal="true" aria-labelledby="new-snippet-modal-title" hidden>
+      <div class="wp-modal__backdrop new-snippet-backdrop"></div>
+      <div class="wp-modal__box wp-modal__box--small">
+        <div class="wp-modal__head">
+          <h2 id="new-snippet-modal-title" class="wp-modal__title">Nieuwe snippet aanmaken</h2>
+          <button type="button" class="wp-modal__close new-snippet-close" aria-label="Sluiten">&times;</button>
+        </div>
+        <div class="wp-modal__body">
+          <div id="new-snippet-form-wrap">
+            <p class="new-snippet__desc">Vul klant en projectnaam in (alleen kleine letters, cijfers en streepjes). Voer de opdracht daarna in de terminal uit.</p>
+            <form class="new-snippet__form" id="new-snippet-form">
+              <label class="new-snippet__label" for="new-snippet-klant">Klant</label>
+              <input type="text" id="new-snippet-klant" class="new-snippet__input" placeholder="bijv. pretparkgids" required autocomplete="off" />
+              <label class="new-snippet__label" for="new-snippet-naam">Project / snippet naam</label>
+              <input type="text" id="new-snippet-naam" class="new-snippet__input" placeholder="bijv. efteling-wachttijden" required autocomplete="off" />
+              <div class="new-snippet__actions">
+                <button type="submit" class="wp-modal__btn wp-modal__btn--primary">Genereer opdracht</button>
+              </div>
+            </form>
+          </div>
+          <div id="new-snippet-result-wrap" hidden>
+            <p class="new-snippet__desc">Voer deze opdracht uit in de terminal (vanuit de projectmap):</p>
+            <div class="new-snippet__command-wrap">
+              <code class="new-snippet__command" id="new-snippet-command"></code>
+            </div>
+            <div class="wp-modal__actions">
+              <button type="button" class="wp-modal__btn wp-modal__btn--primary" id="new-snippet-copy-btn">Kopiëren</button>
+              <button type="button" class="wp-modal__btn wp-modal__btn--ghost" id="new-snippet-close-btn">Sluiten</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script src="dashboard.js"></script>
+  </body>
+</html>

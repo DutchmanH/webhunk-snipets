@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snippet preview</title>
+    <link rel="stylesheet" href="preview.css" />
+  </head>
+  <body>
+    <div id="preview-header"></div>
+    <div class="snippet-shell" id="snippet-shell"></div>
+    <script>
+      (function () {
+        var params = new URLSearchParams(location.search);
+        var snippetPath = params.get('snippet');
+        var titleParam = params.get('title');
+        var headerContainer = document.getElementById('preview-header');
+        var shell = document.getElementById('snippet-shell');
+
+        function initColorPicker() {
+          var colorInput = document.getElementById('snippet-bg-color');
+          var hexInput = document.getElementById('snippet-bg-hex');
+          if (!colorInput || !hexInput) return;
+          function setBg(val) {
+            if (!/^#[0-9A-Fa-f]{6}$/.test(val)) return;
+            shell.style.background = val;
+            colorInput.value = val;
+            hexInput.value = val;
+          }
+          colorInput.addEventListener('input', function () { setBg(this.value); });
+          hexInput.addEventListener('input', function () {
+            var v = this.value.trim();
+            if (v && !v.startsWith('#')) v = '#' + v;
+            if (/^#[0-9A-Fa-f]{6}$/.test(v)) setBg(v);
+          });
+          hexInput.addEventListener('change', function () {
+            var v = this.value.trim().replace(/^#/, '');
+            if (v.length === 6 && /^[0-9A-Fa-f]+$/.test(v)) setBg('#' + v);
+            else if (!/^#[0-9A-Fa-f]{6}$/.test(this.value.trim())) hexInput.value = colorInput.value;
+          });
+        }
+
+        function loadSnippet() {
+          if (!snippetPath || !snippetPath.trim()) {
+            shell.className = 'snippet-shell snippet-shell--error';
+            shell.textContent = 'Geen snippet gekozen. Gebruik: preview/?snippet=klant/naam';
+            document.title = 'Snippet preview – geen snippet';
+            return;
+          }
+          var base = snippetPath.replace(/\/$/, '');
+          var prefix = '../snippets/' + base + '/';
+          if (titleParam) {
+            document.title = titleParam + ' – Snippet preview';
+          } else {
+            var lastPart = base.split('/').pop() || base;
+            document.title = (lastPart.replace(/-/g, ' ') + ' – Snippet preview');
+          }
+          fetch(prefix + 'snippet.html')
+            .then(function (r) {
+              if (!r.ok) throw new Error('Snippet niet gevonden: ' + prefix);
+              return r.text();
+            })
+            .then(function (html) {
+              shell.innerHTML = html.trim();
+              var link = document.createElement('link');
+              link.rel = 'stylesheet';
+              link.href = prefix + 'snippet.css';
+              document.head.appendChild(link);
+              var script = document.createElement('script');
+              script.src = prefix + 'snippet.js';
+              document.body.appendChild(script);
+            })
+            .catch(function (err) {
+              shell.className = 'snippet-shell snippet-shell--error';
+              shell.textContent = err.message || 'Snippet laden mislukt.';
+            });
+        }
+
+        fetch('header.html')
+          .then(function (r) { return r.text(); })
+          .then(function (html) {
+            headerContainer.innerHTML = html;
+            initColorPicker();
+            loadSnippet();
+          })
+          .catch(function () {
+            headerContainer.innerHTML = '<p><a href="../index.html">← Terug</a></p>';
+            loadSnippet();
+          });
+      })();
+    </script>
+  </body>
+</html>
