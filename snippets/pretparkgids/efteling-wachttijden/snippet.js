@@ -93,9 +93,12 @@ function mountUI() {
         <aside class="ppgwt__left">
           <!-- Live + ververs boven totale wachttijd -->
           <div class="ppgwt__liveBar">
-            <div class="ppgwt__liveWrap" id="ppgwt-liveWrap" data-tooltip="Laden...">
-              <span class="ppgwt__dot" id="ppgwt-dot"></span>
-              <span class="ppgwt__liveText" id="ppgwt-liveText">Laden...</span>
+            <div class="ppgwt__liveWrapContainer">
+              <div class="ppgwt__liveWrap" id="ppgwt-liveWrap" data-tooltip="Laden...">
+                <span class="ppgwt__dot" id="ppgwt-dot"></span>
+                <span class="ppgwt__liveText" id="ppgwt-liveText">Laden...</span>
+              </div>
+              <div class="ppgwt__liveInfo" id="ppgwt-liveInfo"></div>
             </div>
             <button class="ppgwt__btn ppgwt__btn--ghost" id="ppgwt-refreshBtn" type="button">
               <span class="ppgwt__spinner" id="ppgwt-spinner"></span>
@@ -189,6 +192,16 @@ function wireEvents() {
     root
       .querySelectorAll(".ppgwt__tabcontent")
       .forEach((p) => p.classList.toggle("is-active", p.id === tabId));
+  });
+
+  // Klik op Live (mobiel): toon/verberg tooltip
+  root.addEventListener("click", (e) => {
+    const wrap = e.target.closest("#ppgwt-liveWrap");
+    if (wrap) {
+      const bar = wrap.closest(".ppgwt__liveBar");
+      if (bar) bar.classList.toggle("is-infoOpen");
+      return;
+    }
   });
 
   // Refresh + anti spam
@@ -464,6 +477,8 @@ function renderMeta() {
   const agePart = typeof age === "number" ? `ca. ${age} min oud` : "leeftijd onbekend";
   const tooltip = `Wachttijden-data (Efteling) ${agePart} · laatst: ${lastUpdate} · vernieuwt over ${left} s`;
   document.getElementById("ppgwt-liveWrap").setAttribute("data-tooltip", tooltip);
+  const liveInfoEl = document.getElementById("ppgwt-liveInfo");
+  if (liveInfoEl) liveInfoEl.textContent = `Laatst: ${lastUpdate} · Vernieuwt over ${left} s`;
 }
 
 function renderLiveTooltipOnly() {
@@ -481,8 +496,10 @@ function renderLiveTooltipOnly() {
   const age = state.meta.dataAgeMinutes;
   const agePart = typeof age === "number" ? `ca. ${age} min oud` : "leeftijd onbekend";
   const tooltip = `Wachttijden-data (Efteling) ${agePart} · laatst: ${lastUpdate} · vernieuwt over ${left} s`;
-  const el = document.getElementById("ppgwt-liveWrap");
-  if (el) el.setAttribute("data-tooltip", tooltip);
+  const wrapEl = document.getElementById("ppgwt-liveWrap");
+  if (wrapEl) wrapEl.setAttribute("data-tooltip", tooltip);
+  const liveInfoEl = document.getElementById("ppgwt-liveInfo");
+  if (liveInfoEl) liveInfoEl.textContent = `Laatst: ${lastUpdate} · Vernieuwt over ${left} s`;
 }
 
 function renderTotalWaitCard() {

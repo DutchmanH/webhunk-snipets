@@ -108,6 +108,9 @@
 }
 
 /* Live pill + tooltip (leesbaar op witte achtergrond) */
+#ppg-wachttijden .ppgwt__liveWrapContainer {
+  position: relative;
+}
 #ppg-wachttijden .ppgwt__liveWrap {
   display: flex;
   align-items: center;
@@ -117,7 +120,11 @@
   background: rgba(0, 0, 0, 0.06);
   border: 1px solid rgba(0, 0, 0, 0.12);
   color: #1a1a1a;
-  position: relative;
+}
+@media (max-width: 768px) {
+  #ppg-wachttijden .ppgwt__liveWrap {
+    cursor: pointer;
+  }
 }
 #ppg-wachttijden .ppgwt__dot {
   width: 10px;
@@ -144,32 +151,34 @@
   color: #1a1a1a;
 }
 
-/* tooltip */
-#ppg-wachttijden .ppgwt__liveWrap::after {
-  content: attr(data-tooltip);
-  white-space: pre;
+/* Live tooltip: blauw blok, alleen bij hover (desktop) of bij klik (mobiel) */
+#ppg-wachttijden .ppgwt__liveInfo {
+  display: none;
   position: absolute;
   left: 0;
-  top: calc(100% + 10px);
-  min-width: 260px;
+  top: calc(100% + 8px);
+  min-width: 200px;
+  max-width: min(280px, calc(100vw - 32px));
   padding: 10px 12px;
   border-radius: 14px;
   background: #0d2137;
   color: #fff;
   font-size: 12px;
-  line-height: 1.35;
+  line-height: 1.4;
+  white-space: normal;
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
-  opacity: 0;
-  transform: translateY(-4px);
-  pointer-events: none;
-  transition:
-    opacity 0.12s ease,
-    transform 0.12s ease;
   z-index: 50;
 }
-#ppg-wachttijden .ppgwt__liveWrap:hover::after {
-  opacity: 1;
-  transform: translateY(0);
+#ppg-wachttijden .ppgwt__liveWrapContainer:hover .ppgwt__liveInfo {
+  display: block;
+}
+@media (max-width: 768px) {
+  #ppg-wachttijden .ppgwt__liveWrapContainer:hover .ppgwt__liveInfo {
+    display: none;
+  }
+  #ppg-wachttijden .ppgwt__liveBar.is-infoOpen .ppgwt__liveInfo {
+    display: block;
+  }
 }
 
 /* Buttons */
