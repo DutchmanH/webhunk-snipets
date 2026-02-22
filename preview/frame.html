@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Snippet</title>
+    <style>
+      body { margin: 0; min-height: 100vh; background: #fff; }
+      .frame-viewport { min-height: 100vh; padding: 16px; box-sizing: border-box; }
+      .snippet-shell--error { color: #991b1b; padding: 1rem; }
+    </style>
+  </head>
+  <body>
+    <div class="frame-viewport">
+      <div class="snippet-shell" id="snippet-shell"></div>
+    </div>
+    <script>
+      (function () {
+        var params = new URLSearchParams(location.search);
+        var snippetPath = params.get('snippet');
+        var bg = params.get('bg') || '#ffffff';
+        var shell = document.getElementById('snippet-shell');
+        if (shell) shell.style.background = bg;
+
+        if (window.parent !== window) {
+          window.addEventListener('message', function (e) {
+            if (e.data && e.data.type === 'setBg' && shell) shell.style.background = e.data.value;
+          });
+        }
+
+        function loadSnippet() {
+          if (!snippetPath || !snippetPath.trim()) {
+            shell.className = 'snippet-shell snippet-shell--error';
+            shell.textContent = 'Geen snippet gekozen.';
+            return;
+          }
+          var base = snippetPath.replace(/\/$/, '');
+          var prefix = '../snippets/' + base + '/';
+          var cacheBust = '?v=' + Date.now();
+          fetch(prefix + 'snippet.html' + cacheBust)
+            .then(function (r) {
+              if (!r.ok) throw new Error('Snippet niet gevonden: ' + prefix);
+              return r.text();
+            })
+            .then(function (html) {
+              shell.innerHTML = html.trim();
+              var link = document.createElement('link');
+              link.rel = 'stylesheet';
+              link.href = prefix + 'snippet.css' + cacheBust;
+              document.head.appendChild(link);
+              var script = document.createElement('script');
+              script.src = prefix + 'snippet.js' + cacheBust;
+              document.body.appendChild(script);
+            })
+            .catch(function (err) {
+              shell.className = 'snippet-shell snippet-shell--error';
+              shell.textContent = err.message || 'Snippet laden mislukt.';
+            });
+        }
+        loadSnippet();
+      })();
+    </script>
+  </body>
+</html>

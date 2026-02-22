@@ -284,7 +284,7 @@
 }
 #ppg-wachttijden .ppgwt__name {
   font-weight: 950;
-  font-size: 14px;
+  font-size: 17px;
 }
 #ppg-wachttijden .ppgwt__link {
   color: #fff;
@@ -517,7 +517,7 @@
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.12);
   border: 1px solid rgba(255, 255, 255, 0.25);
-  font-size: 12px;
+  font-size: 14px;
   font-weight: 950;
   color: #fff;
 }
@@ -539,7 +539,7 @@
   background: rgba(255, 255, 255, 0.1);
   cursor: pointer;
   font-weight: 950;
-  font-size: 13px;
+  font-size: 15px;
   color: #fff;
 }
 #ppg-wachttijden .ppgwt__favItem input {

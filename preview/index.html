@@ -4,11 +4,13 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Snippet preview</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" />
     <link rel="stylesheet" href="preview.css" />
   </head>
   <body>
     <header class="snippet-header" id="preview-header">
       <a href="../index.html">← Terug naar snippet-overzicht</a>
+      <span class="snippet-header__name" id="preview-snippet-name">Preview</span>
       <div class="snippet-header__bg">
         <label for="snippet-bg-color">Achtergrond</label>
         <input type="color" id="snippet-bg-color" value="#ffffff" aria-label="Kies kleur" />
@@ -16,8 +18,29 @@
       </div>
     </header>
     <main class="preview-body">
-      <div class="preview-body__viewport" id="preview-viewport">
-        <div class="snippet-shell" id="snippet-shell"></div>
+      <div class="preview-body__frame">
+        <div class="preview-body__frame-header">
+          <div class="preview-body__presets" role="group" aria-label="Standaard resolutie">
+            <button type="button" class="preview-body__preset" data-preset="375" title="Mobiel (375px)">
+              <i class="fa-solid fa-mobile-screen" aria-hidden="true"></i>
+              <span>Mobiel</span>
+            </button>
+            <button type="button" class="preview-body__preset" data-preset="768" title="Tablet (768px)">
+              <i class="fa-solid fa-tablet-screen-button" aria-hidden="true"></i>
+              <span>Tablet</span>
+            </button>
+            <button type="button" class="preview-body__preset is-active" data-preset="1200" title="Desktop (1200px)">
+              <i class="fa-solid fa-desktop" aria-hidden="true"></i>
+              <span>Desktop</span>
+            </button>
+          </div>
+          <span class="preview-body__width-display">Breedte: <strong id="preview-width">1200</strong> px</span>
+          <span class="preview-body__frame-hint">Sleep de rechterrand om te resizen</span>
+        </div>
+        <div class="preview-body__frame-inner" id="preview-frame">
+          <iframe class="preview-body__iframe" id="preview-iframe" title="Snippet preview"></iframe>
+          <div class="preview-body__resize-handle" id="preview-resize-handle" title="Sleep om breedte te wijzigen" aria-label="Resize viewport"></div>
+        </div>
       </div>
     </main>
     <script>
@@ -25,17 +48,92 @@
         var params = new URLSearchParams(location.search);
         var snippetPath = params.get('snippet');
         var titleParam = params.get('title');
-        var shell = document.getElementById('snippet-shell');
+        var iframe = document.getElementById('preview-iframe');
+        var colorInput = document.getElementById('snippet-bg-color');
+        var hexInput = document.getElementById('snippet-bg-hex');
+
+        var displayName = titleParam || (snippetPath ? (snippetPath.replace(/\/$/, '').split('/').pop() || snippetPath).replace(/-/g, ' ') : 'Preview');
+        if (titleParam) {
+          document.title = titleParam + ' – Snippet preview';
+        } else if (snippetPath) {
+          document.title = displayName + ' – Snippet preview';
+        } else {
+          document.title = 'Snippet preview';
+        }
+        var nameEl = document.getElementById('preview-snippet-name');
+        if (nameEl) nameEl.textContent = displayName;
+
+        function setIframeSrc() {
+          if (!iframe) return;
+          var q = new URLSearchParams(location.search);
+          var bg = (colorInput && colorInput.value) ? colorInput.value.replace('#', '') : 'ffffff';
+          q.set('bg', bg);
+          iframe.src = 'frame.html?' + q.toString();
+        }
+
+        function initResize() {
+          var handle = document.getElementById('preview-resize-handle');
+          var widthEl = document.getElementById('preview-width');
+          if (!iframe || !handle) return;
+
+          var minW = 320;
+          var maxW = 1600;
+          function setWidth(px) {
+            px = Math.max(minW, Math.min(maxW, px));
+            iframe.style.width = px + 'px';
+            iframe.style.maxWidth = px + 'px';
+            if (widthEl) widthEl.textContent = px;
+            document.querySelectorAll('.preview-body__preset').forEach(function (btn) {
+              btn.classList.toggle('is-active', parseInt(btn.getAttribute('data-preset'), 10) === px);
+            });
+          }
+
+          document.querySelectorAll('.preview-body__preset').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              setWidth(parseInt(btn.getAttribute('data-preset'), 10));
+            });
+          });
+
+          var dragging = false;
+          var dragStartLeft = 0;
+
+          function stopDrag() {
+            if (dragging) {
+              document.body.style.cursor = '';
+              document.body.style.userSelect = '';
+            }
+            dragging = false;
+          }
+
+          handle.addEventListener('pointerdown', function (e) {
+            if (e.button !== 0) return; /* alleen linkermuisknop */
+            e.preventDefault();
+            dragging = true;
+            dragStartLeft = iframe.getBoundingClientRect().left;
+            handle.setPointerCapture(e.pointerId);
+            document.body.style.cursor = 'ew-resize';
+            document.body.style.userSelect = 'none';
+          });
+          handle.addEventListener('pointermove', function (e) {
+            if (!dragging || !e.buttons) return;
+            e.preventDefault();
+            setWidth(Math.round(e.clientX - dragStartLeft));
+          });
+          handle.addEventListener('pointerup', stopDrag);
+          handle.addEventListener('pointercancel', stopDrag);
+
+          setWidth(1200);
+        }
 
         function initColorPicker() {
-          var colorInput = document.getElementById('snippet-bg-color');
-          var hexInput = document.getElementById('snippet-bg-hex');
           if (!colorInput || !hexInput) return;
           function setBg(val) {
             if (!/^#[0-9A-Fa-f]{6}$/.test(val)) return;
-            shell.style.background = val;
             colorInput.value = val;
             hexInput.value = val;
+            if (iframe && iframe.contentWindow) {
+              iframe.contentWindow.postMessage({ type: 'setBg', value: val }, '*');
+            }
           }
           colorInput.addEventListener('input', function () { setBg(this.value); });
           hexInput.addEventListener('input', function () {
@@ -50,45 +148,9 @@
           });
         }
 
-        function loadSnippet() {
-          if (!snippetPath || !snippetPath.trim()) {
-            shell.className = 'snippet-shell snippet-shell--error';
-            shell.textContent = 'Geen snippet gekozen. Gebruik: preview/?snippet=klant/naam';
-            document.title = 'Snippet preview – geen snippet';
-            return;
-          }
-          var base = snippetPath.replace(/\/$/, '');
-          var prefix = '../snippets/' + base + '/';
-          var cacheBust = '?v=' + Date.now();
-          if (titleParam) {
-            document.title = titleParam + ' – Snippet preview';
-          } else {
-            var lastPart = base.split('/').pop() || base;
-            document.title = (lastPart.replace(/-/g, ' ') + ' – Snippet preview');
-          }
-          fetch(prefix + 'snippet.html' + cacheBust)
-            .then(function (r) {
-              if (!r.ok) throw new Error('Snippet niet gevonden: ' + prefix);
-              return r.text();
-            })
-            .then(function (html) {
-              shell.innerHTML = html.trim();
-              var link = document.createElement('link');
-              link.rel = 'stylesheet';
-              link.href = prefix + 'snippet.css' + cacheBust;
-              document.head.appendChild(link);
-              var script = document.createElement('script');
-              script.src = prefix + 'snippet.js' + cacheBust;
-              document.body.appendChild(script);
-            })
-            .catch(function (err) {
-              shell.className = 'snippet-shell snippet-shell--error';
-              shell.textContent = err.message || 'Snippet laden mislukt.';
-            });
-        }
-
+        initResize();
         initColorPicker();
-        loadSnippet();
+        setIframeSrc();
       })();
     </script>
   </body>

@@ -126,19 +126,19 @@ function mountUI() {
         <!-- RIGHT -->
         <main class="ppgwt__right">
           <div class="ppgwt__card ppgwt__card--tabs">
-            <div class="ppgwt__toolbar ppgwt__toolbar--global">
-              <input class="ppgwt__search" id="ppgwt-search" placeholder="Zoek in attracties, shows, restaurants..." type="search" />
-            </div>
             <div class="ppgwt__tabs">
               <button class="ppgwt__tab is-active" data-tab="tab-attracties" type="button">Attracties</button>
               <button class="ppgwt__tab" data-tab="tab-shows" type="button">Shows</button>
               <button class="ppgwt__tab" data-tab="tab-food" type="button">Eten & Drinken</button>
               <button class="ppgwt__tab" data-tab="tab-shops" type="button">Souvenirs</button>
             </div>
+            <div class="ppgwt__toolbar ppgwt__toolbar--global">
+              <input class="ppgwt__search" id="ppgwt-search" placeholder="Zoek in attracties, shows, restaurants..." type="search" />
+            </div>
 
             <div class="ppgwt__tabcontent is-active" id="tab-attracties">
               <div class="ppgwt__toolbar">
-                <span class="ppgwt__chipsLabel">Klik om te filteren:</span>
+                <span class="ppgwt__chipsLabel">Filters</span>
                 <div class="ppgwt__chips" id="ppgwt-chips">
                   <button class="ppgwt__chip" data-chip="open" type="button">Alleen open</button>
                   <button class="ppgwt__chip" data-chip="hasWait" type="button">Met wachttijd</button>
