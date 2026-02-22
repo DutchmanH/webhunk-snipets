@@ -10,12 +10,25 @@
   font-family: inherit;
 }
 
-#ppg-wachttijden .ppgwt__header {
+/* Live + ververs balk (boven totale wachttijd, leesbaar op witte achtergrond) */
+#ppg-wachttijden .ppgwt__liveBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 14px;
+}
+/* Ververs-knop op witte achtergrond: donkere tekst en rand */
+#ppg-wachttijden .ppgwt__liveBar .ppgwt__btn {
+  color: #1a1a1a;
+  background: rgba(0, 0, 0, 0.06);
+  border-color: rgba(0, 0, 0, 0.15);
+}
+#ppg-wachttijden .ppgwt__liveBar .ppgwt__btn:hover:not(:disabled) {
+  background: rgba(0, 0, 0, 0.1);
+}
+#ppg-wachttijden .ppgwt__liveBar .ppgwt__btn:disabled {
+  color: #666;
 }
 
 #ppg-wachttijden .ppgwt__grid {
@@ -45,8 +58,10 @@
   padding: 16px;
 }
 #ppg-wachttijden .ppgwt__statLabel {
+  margin: 0;
   font-weight: 950;
-  font-size: 13px;
+  font-size: 20px;
+  letter-spacing: -0.01em;
   opacity: 0.92;
 }
 #ppg-wachttijden .ppgwt__statValue {
@@ -64,10 +79,23 @@
 #ppg-wachttijden .ppgwt__statSub:not(:empty) {
   opacity: 1;
 }
+#ppg-wachttijden .ppgwt__statPark {
+  font-size: 12px;
+  margin-top: 6px;
+  opacity: 0.92;
+}
+
+#ppg-wachttijden .ppgwt__cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 14px;
+}
 
 #ppg-wachttijden .ppgwt__h3 {
   margin: 0;
-  font-size: 16px;
+  font-size: 20px;
   font-weight: 950;
   letter-spacing: -0.01em;
 }
@@ -79,16 +107,16 @@
   margin-bottom: 8px;
 }
 
-/* Live pill + tooltip (links) */
+/* Live pill + tooltip (leesbaar op witte achtergrond) */
 #ppg-wachttijden .ppgwt__liveWrap {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #fff;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #1a1a1a;
   position: relative;
 }
 #ppg-wachttijden .ppgwt__dot {
@@ -96,7 +124,7 @@
   height: 10px;
   border-radius: 999px;
   background: #999;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.14);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.08);
 }
 #ppg-wachttijden .ppgwt__dot.is-good {
   background: #25c06f;
@@ -113,6 +141,7 @@
 #ppg-wachttijden .ppgwt__liveText {
   font-weight: 950;
   letter-spacing: -0.01em;
+  color: #1a1a1a;
 }
 
 /* tooltip */
@@ -216,31 +245,38 @@
   flex-direction: column;
   gap: 10px;
 }
+#ppg-wachttijden .ppgwt__list {
+  margin-top: 4px;
+}
 
-/* row inside red card -> make row "white card" for contrast */
+/* row: geen card-achtergrond; alleen favorieten krijgen een card-uitstraling */
 #ppg-wachttijden .ppgwt__row {
   display: flex;
   justify-content: space-between;
   gap: 12px;
   padding: 12px;
   border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  background: transparent;
   color: #fff;
   transition:
     transform 0.06s ease,
-    box-shadow 0.12s ease;
+    box-shadow 0.12s ease,
+    background 0.12s ease;
 }
 #ppg-wachttijden .ppgwt__row:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 14px 30px rgba(0, 0, 0, 0.12);
+  background: rgba(255, 255, 255, 0.06);
 }
 #ppg-wachttijden .ppgwt__row.is-compact {
   padding: 10px 12px;
 }
 #ppg-wachttijden .ppgwt__row.is-fav {
-  border-color: rgba(255, 255, 255, 0.45);
+  border: 1px solid rgba(255, 255, 255, 0.35);
   background: rgba(255, 255, 255, 0.14);
+  border-radius: 16px;
+}
+#ppg-wachttijden .ppgwt__row.is-fav:hover {
+  background: rgba(255, 255, 255, 0.18);
 }
 
 #ppg-wachttijden .ppgwt__rowLeft {
@@ -263,6 +299,11 @@
   font-size: 13px;
   color: rgba(255, 255, 255, 0.92);
 }
+#ppg-wachttijden .ppgwt__showType {
+  font-weight: 800;
+  opacity: 0.95;
+}
+
 #ppg-wachttijden .ppgwt__line {
   display: flex;
   align-items: center;
@@ -280,52 +321,69 @@
   font-size: 12px;
   padding: 8px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.25);
   white-space: nowrap;
   color: #fff;
 }
 #ppg-wachttijden .ppgwt__badge.is-open {
-  background: rgba(37, 192, 111, 0.22);
-  border-color: rgba(37, 192, 111, 0.35);
+  background: #1e9b5a;
+  border-color: rgba(255, 255, 255, 0.5);
 }
 #ppg-wachttijden .ppgwt__badge.is-closed {
-  background: rgba(13, 33, 55, 0.2);
-  border-color: rgba(255, 255, 255, 0.2);
+  background: rgba(13, 33, 55, 0.85);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 #ppg-wachttijden .ppgwt__badge.is-issue {
-  background: rgba(255, 91, 91, 0.22);
-  border-color: rgba(255, 91, 91, 0.35);
+  background: #d93d3d;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 #ppg-wachttijden .ppgwt__badge.is-maint {
-  background: rgba(240, 180, 41, 0.22);
-  border-color: rgba(240, 180, 41, 0.35);
+  background: #c9941a;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 #ppg-wachttijden .ppgwt__badge.is-upcoming {
-  background: rgba(255, 255, 255, 0.18);
-  border-color: rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.35);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 #ppg-wachttijden .ppgwt__badge.is-unknown {
-  background: rgba(255, 255, 255, 0.12);
-  border-color: rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.28);
+  border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* mini badge on SR line */
+/* mini badge (o.a. Single Rider) – zelfde contrast als hoofdbadges */
 #ppg-wachttijden .ppgwt__miniBadge {
   font-size: 11px;
   font-weight: 950;
   padding: 6px 8px;
   border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  background: rgba(255, 255, 255, 0.3);
+  color: #fff;
+}
+#ppg-wachttijden .ppgwt__miniBadge.mini-open {
+  background: #1e9b5a;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+#ppg-wachttijden .ppgwt__miniBadge.mini-closed {
+  background: rgba(13, 33, 55, 0.85);
+  border-color: rgba(255, 255, 255, 0.35);
 }
 #ppg-wachttijden .ppgwt__miniBadge.mini-issue {
-  background: rgba(255, 91, 91, 0.22);
-  border-color: rgba(255, 91, 91, 0.35);
+  background: #d93d3d;
+  border-color: rgba(255, 255, 255, 0.4);
 }
 #ppg-wachttijden .ppgwt__miniBadge.mini-maint {
-  background: rgba(240, 180, 41, 0.22);
-  border-color: rgba(240, 180, 41, 0.35);
+  background: #c9941a;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+#ppg-wachttijden .ppgwt__miniBadge--time {
+  background: #1e9b5a;
+  border-color: rgba(255, 255, 255, 0.5);
+}
+#ppg-wachttijden .ppgwt__miniBadge.mini-unknown {
+  background: rgba(255, 255, 255, 0.32);
+  border-color: rgba(255, 255, 255, 0.45);
 }
 
 /* star */
@@ -344,6 +402,25 @@
 }
 #ppg-wachttijden .ppgwt__star.is-on {
   color: #fff;
+}
+
+/* prullenbak-knop (beste-naar lijst, Font Awesome) */
+#ppg-wachttijden .ppgwt__trashBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 16px;
+  line-height: 1;
+}
+#ppg-wachttijden .ppgwt__trashBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+#ppg-wachttijden .ppgwt__trashBtn .fas {
+  display: block;
 }
 
 /* tabs */
@@ -399,6 +476,16 @@
   background: rgba(255, 255, 255, 0.16);
 }
 
+#ppg-wachttijden .ppgwt__chipsLabel {
+  display: block;
+  width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 6px;
+}
 #ppg-wachttijden .ppgwt__chips {
   display: flex;
   flex-wrap: wrap;

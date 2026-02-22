@@ -7,14 +7,24 @@
     <link rel="stylesheet" href="preview.css" />
   </head>
   <body>
-    <div id="preview-header"></div>
-    <div class="snippet-shell" id="snippet-shell"></div>
+    <header class="snippet-header" id="preview-header">
+      <a href="../index.html">← Terug naar snippet-overzicht</a>
+      <div class="snippet-header__bg">
+        <label for="snippet-bg-color">Achtergrond</label>
+        <input type="color" id="snippet-bg-color" value="#ffffff" aria-label="Kies kleur" />
+        <input type="text" id="snippet-bg-hex" value="#ffffff" maxlength="9" aria-label="Hex kleur" />
+      </div>
+    </header>
+    <main class="preview-body">
+      <div class="preview-body__viewport" id="preview-viewport">
+        <div class="snippet-shell" id="snippet-shell"></div>
+      </div>
+    </main>
     <script>
       (function () {
         var params = new URLSearchParams(location.search);
         var snippetPath = params.get('snippet');
         var titleParam = params.get('title');
-        var headerContainer = document.getElementById('preview-header');
         var shell = document.getElementById('snippet-shell');
 
         function initColorPicker() {
@@ -49,13 +59,14 @@
           }
           var base = snippetPath.replace(/\/$/, '');
           var prefix = '../snippets/' + base + '/';
+          var cacheBust = '?v=' + Date.now();
           if (titleParam) {
             document.title = titleParam + ' – Snippet preview';
           } else {
             var lastPart = base.split('/').pop() || base;
             document.title = (lastPart.replace(/-/g, ' ') + ' – Snippet preview');
           }
-          fetch(prefix + 'snippet.html')
+          fetch(prefix + 'snippet.html' + cacheBust)
             .then(function (r) {
               if (!r.ok) throw new Error('Snippet niet gevonden: ' + prefix);
               return r.text();
@@ -64,10 +75,10 @@
               shell.innerHTML = html.trim();
               var link = document.createElement('link');
               link.rel = 'stylesheet';
-              link.href = prefix + 'snippet.css';
+              link.href = prefix + 'snippet.css' + cacheBust;
               document.head.appendChild(link);
               var script = document.createElement('script');
-              script.src = prefix + 'snippet.js';
+              script.src = prefix + 'snippet.js' + cacheBust;
               document.body.appendChild(script);
             })
             .catch(function (err) {
@@ -76,17 +87,8 @@
             });
         }
 
-        fetch('header.html')
-          .then(function (r) { return r.text(); })
-          .then(function (html) {
-            headerContainer.innerHTML = html;
-            initColorPicker();
-            loadSnippet();
-          })
-          .catch(function () {
-            headerContainer.innerHTML = '<p><a href="../index.html">← Terug</a></p>';
-            loadSnippet();
-          });
+        initColorPicker();
+        loadSnippet();
       })();
     </script>
   </body>

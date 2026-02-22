@@ -1,4 +1,5 @@
 <!-- Gegenereerd voor WordPress / Code Snippets - plak als HTML-snippet -->
+<!-- Snippet: pretparkgids-efteling-wachttijden | Gegenereerd: 2026-02-22 -->
 <div id="ppg-wachttijden"></div>
 <style>
 /* =========================================================
@@ -13,7 +14,8 @@
   font-family: inherit;
 }
 
-#ppg-wachttijden .ppgwt__header {
+/* Live + ververs balk (boven totale wachttijd, leesbaar op witte achtergrond) */
+#ppg-wachttijden .ppgwt__liveBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -67,6 +69,18 @@
 #ppg-wachttijden .ppgwt__statSub:not(:empty) {
   opacity: 1;
 }
+#ppg-wachttijden .ppgwt__statPark {
+  font-size: 12px;
+  margin-top: 6px;
+  opacity: 0.92;
+}
+
+#ppg-wachttijden .ppgwt__cardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
 
 #ppg-wachttijden .ppgwt__h3 {
   margin: 0;
@@ -82,16 +96,16 @@
   margin-bottom: 8px;
 }
 
-/* Live pill + tooltip (links) */
+/* Live pill + tooltip (leesbaar op witte achtergrond) */
 #ppg-wachttijden .ppgwt__liveWrap {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 10px 12px;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  color: #fff;
+  background: rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  color: #1a1a1a;
   position: relative;
 }
 #ppg-wachttijden .ppgwt__dot {
@@ -99,7 +113,7 @@
   height: 10px;
   border-radius: 999px;
   background: #999;
-  box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.14);
+  box-shadow: 0 0 0 4px rgba(0, 0, 0, 0.08);
 }
 #ppg-wachttijden .ppgwt__dot.is-good {
   background: #25c06f;
@@ -116,6 +130,7 @@
 #ppg-wachttijden .ppgwt__liveText {
   font-weight: 950;
   letter-spacing: -0.01em;
+  color: #1a1a1a;
 }
 
 /* tooltip */
@@ -349,6 +364,25 @@
   color: #fff;
 }
 
+/* prullenbak-knop (beste-naar lijst, Font Awesome) */
+#ppg-wachttijden .ppgwt__trashBtn {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 12px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 16px;
+  line-height: 1;
+}
+#ppg-wachttijden .ppgwt__trashBtn:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+#ppg-wachttijden .ppgwt__trashBtn .fas {
+  display: block;
+}
+
 /* tabs */
 #ppg-wachttijden .ppgwt__tabs {
   display: flex;
@@ -540,31 +574,39 @@ function bootstrap() {
   startAutoRefreshTick();
 }
 
+function ensureFontAwesome() {
+  if (document.querySelector('link[href*="font-awesome"], link[href*="fontawesome"]')) return;
+  const link = document.createElement("link");
+  link.rel = "stylesheet";
+  link.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css";
+  document.head.appendChild(link);
+}
+
 function mountUI() {
+  ensureFontAwesome();
   const root = document.getElementById("ppg-wachttijden");
   root.innerHTML = `
     <div class="ppgwt" style="--ppg-accent:${escapeAttr(CONFIG.accent)};">
-      <div class="ppgwt__header">
-        <!-- ✅ live info links -->
-        <div class="ppgwt__liveWrap" id="ppgwt-liveWrap" data-tooltip="Laden...">
-          <span class="ppgwt__dot" id="ppgwt-dot"></span>
-          <span class="ppgwt__liveText" id="ppgwt-liveText">Laden...</span>
-        </div>
-
-        <button class="ppgwt__btn ppgwt__btn--white" id="ppgwt-refreshBtn" type="button">
-          <span class="ppgwt__spinner" id="ppgwt-spinner"></span>
-          Ververs
-        </button>
-      </div>
-
       <div class="ppgwt__grid">
         <!-- LEFT -->
         <aside class="ppgwt__left">
+          <!-- Live + ververs boven totale wachttijd -->
+          <div class="ppgwt__liveBar">
+            <div class="ppgwt__liveWrap" id="ppgwt-liveWrap" data-tooltip="Laden...">
+              <span class="ppgwt__dot" id="ppgwt-dot"></span>
+              <span class="ppgwt__liveText" id="ppgwt-liveText">Laden...</span>
+            </div>
+            <button class="ppgwt__btn ppgwt__btn--ghost" id="ppgwt-refreshBtn" type="button">
+              <span class="ppgwt__spinner" id="ppgwt-spinner"></span>
+              Ververs
+            </button>
+          </div>
 
-          <!-- ✅ aparte card voor totale wachttijd -->
+          <!-- ✅ aparte card voor totale wachttijd + parkopeningsinfo -->
           <div class="ppgwt__card ppgwt__card--stat">
             <div class="ppgwt__statLabel">Totale wachttijd</div>
             <div class="ppgwt__statValue" id="ppgwt-totalWaitValue">-</div>
+            <div class="ppgwt__statPark" id="ppgwt-parkHours"></div>
             <div class="ppgwt__statSub" id="ppgwt-refreshHint"></div>
           </div>
 
@@ -577,19 +619,6 @@ function mountUI() {
             <div class="ppgwt__empty" id="ppgwt-bestEmpty" style="display:none;">
               Geen bruikbare wachttijden in je favorieten.
             </div>
-          </div>
-
-          <div class="ppgwt__card">
-            <div class="ppgwt__cardHeader">
-              <h3 class="ppgwt__h3">Favorieten</h3>
-              <button class="ppgwt__btn ppgwt__btn--ghost" id="ppgwt-toggleEditBtn" type="button">Bewerk</button>
-            </div>
-
-            <div class="ppgwt__muted ppgwt__mb8">Ster = jouw lijst. Die bepaalt “beste naar”.</div>
-
-            <!-- ✅ fix: containers bestaan altijd -->
-            <div id="ppgwt-favoritesView"></div>
-            <div id="ppgwt-favoritesEdit" style="display:none;"></div>
           </div>
         </aside>
 
@@ -880,6 +909,11 @@ function normalizeNumberOrNull(v) {
  * RENDER
  * ========================= */
 function renderAll() {
+  const fallback = getFallbackMessage();
+  if (fallback) {
+    renderFallbackState(fallback);
+    return;
+  }
   renderMeta();
   renderTotalWaitCard();
   renderBestFromFavorites();
@@ -954,8 +988,26 @@ function renderLiveTooltipOnly() {
 
 function renderTotalWaitCard() {
   const total = calculateTotalWaitingTime(state.normalized?.attractions || []);
-  const el = document.getElementById("ppgwt-totalWaitValue");
-  if (el) el.textContent = total > 0 ? `${total} min` : "-";
+  const valueEl = document.getElementById("ppgwt-totalWaitValue");
+  if (valueEl) valueEl.textContent = total > 0 ? `${total} min` : "-";
+
+  const parkEl = document.getElementById("ppgwt-parkHours");
+  if (parkEl) {
+    const info = getParkOpeningInfo();
+    if (info.fromTo) {
+      const status =
+        info.openNow === true
+          ? "Park open"
+          : info.openNow === false
+            ? "Park gesloten"
+            : "Openingstijden";
+      parkEl.textContent = `${status} · ${info.fromTo}`;
+      parkEl.style.opacity = "1";
+    } else {
+      parkEl.textContent = "";
+      parkEl.style.opacity = "0";
+    }
+  }
 }
 
 function renderRefreshHint(text) {
@@ -1194,15 +1246,21 @@ function renderAttractionCard(item, { compact }) {
   badge.className = `ppgwt__badge ${badgeClassAttraction(item)}`;
   badge.textContent = badgeTextAttraction(item);
 
-  const star = document.createElement("button");
-  star.type = "button";
-  star.className = `ppgwt__star ${fav ? "is-on" : ""}`;
-  star.setAttribute("data-star-id", item.Id);
-  star.setAttribute("aria-label", fav ? "Verwijder favoriet" : "Maak favoriet");
-  star.innerHTML = fav ? "★" : "☆";
+  const actionBtn = document.createElement("button");
+  actionBtn.type = "button";
+  actionBtn.setAttribute("data-star-id", item.Id);
+  if (compact) {
+    actionBtn.className = "ppgwt__trashBtn";
+    actionBtn.setAttribute("aria-label", "Verwijder uit favorieten");
+    actionBtn.innerHTML = '<i class="fas fa-trash-alt" aria-hidden="true"></i>';
+  } else {
+    actionBtn.className = `ppgwt__star ${fav ? "is-on" : ""}`;
+    actionBtn.setAttribute("aria-label", fav ? "Verwijder favoriet" : "Maak favoriet");
+    actionBtn.innerHTML = fav ? "★" : "☆";
+  }
 
   right.appendChild(badge);
-  right.appendChild(star);
+  right.appendChild(actionBtn);
 
   card.appendChild(left);
   card.appendChild(right);
@@ -1614,6 +1672,53 @@ function formatDate(d) {
     day: "2-digit",
     month: "short",
   });
+}
+
+/** Park opening uit state.data.OpeningHours (API) */
+function getParkOpeningInfo() {
+  const oh = state.data?.OpeningHours;
+  if (!oh) return { openNow: null, fromTo: "", hourFrom: null, hourTo: null };
+  const from = oh.HourFrom ? new Date(oh.HourFrom) : null;
+  const to = oh.HourTo ? new Date(oh.HourTo) : null;
+  const fromTo =
+    from && to ? `${formatTime(from)} – ${formatTime(to)}` : "";
+  const now = new Date();
+  let openNow = null;
+  if (from && to) {
+    if (now >= from && now <= to) openNow = true;
+    else openNow = false;
+  }
+  return { openNow, fromTo, hourFrom: from, hourTo: to };
+}
+
+/** Bepaal of we de volledige widget tonen of een fallback (data niet beschikbaar / park gesloten). */
+function getFallbackMessage() {
+  const list = state.data?.AttractionInfo;
+  if (!state.data || !Array.isArray(list) || list.length === 0)
+    return "Data niet beschikbaar";
+  const { openNow } = getParkOpeningInfo();
+  const attractions = state.normalized?.attractions || [];
+  const hasAnyWaitTime = attractions.some(
+    (a) =>
+      a.State === "open" &&
+      typeof a.WaitingTime === "number" &&
+      a.WaitingTime >= 0,
+  );
+  if (openNow === false && !hasAnyWaitTime) return "Park gesloten";
+  return null;
+}
+
+function renderFallbackState(message) {
+  const root = document.getElementById("ppg-wachttijden");
+  if (!root) return;
+  root.innerHTML = `
+    <div class="ppgwt" style="--ppg-accent:${escapeAttr(CONFIG.accent)};">
+      <div class="ppgwt__card">
+        <h3 class="ppgwt__h3">${escapeHtml(message)}</h3>
+        <div class="ppgwt__muted">Er is nu niets te tonen. Probeer het later opnieuw.</div>
+      </div>
+    </div>
+  `;
 }
 
 function renderErrorState() {
