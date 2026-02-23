@@ -10,25 +10,13 @@
   font-family: inherit;
 }
 
-/* Live + ververs balk (boven totale wachttijd, leesbaar op witte achtergrond) */
+/* Live balk boven de twee vlakken */
 #ppg-wachttijden .ppgwt__liveBar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   gap: 12px;
   margin-bottom: 14px;
-}
-/* Ververs-knop op witte achtergrond: donkere tekst en rand */
-#ppg-wachttijden .ppgwt__liveBar .ppgwt__btn {
-  color: #1a1a1a;
-  background: rgba(0, 0, 0, 0.06);
-  border-color: rgba(0, 0, 0, 0.15);
-}
-#ppg-wachttijden .ppgwt__liveBar .ppgwt__btn:hover:not(:disabled) {
-  background: rgba(0, 0, 0, 0.1);
-}
-#ppg-wachttijden .ppgwt__liveBar .ppgwt__btn:disabled {
-  color: #666;
 }
 
 #ppg-wachttijden .ppgwt__grid {
@@ -83,6 +71,21 @@
   font-size: 12px;
   margin-top: 6px;
   opacity: 0.92;
+}
+
+#ppg-wachttijden .ppgwt__statTag {
+  display: inline-block;
+  margin-top: 8px;
+  font-size: 11px;
+  font-weight: 950;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+#ppg-wachttijden .ppgwt__statTag--closed {
+  background: rgba(13, 33, 55, 0.85);
+  color: rgba(255, 255, 255, 0.95);
 }
 
 #ppg-wachttijden .ppgwt__cardHeader {
@@ -245,6 +248,35 @@
   background: rgba(255, 255, 255, 0.1);
   color: rgba(255, 255, 255, 0.92);
   font-weight: 800;
+}
+
+#ppg-wachttijden .ppgwt__empty--favorites {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+}
+
+#ppg-wachttijden .ppgwt__empty--favorites .ppgwt__emptyIcon {
+  font-size: 1.75rem;
+  opacity: 0.7;
+}
+
+#ppg-wachttijden .ppgwt__empty--maint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px;
+}
+
+#ppg-wachttijden .ppgwt__empty--maint .ppgwt__emptyIcon {
+  font-size: 1.75rem;
+  opacity: 0.8;
+  color: #1e9b5a;
 }
 
 /* List / rows */

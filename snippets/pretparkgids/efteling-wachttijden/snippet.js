@@ -47,10 +47,8 @@ const state = {
   ui: {
     editFavorites: false,
     query: "",
-    filterOpen: false,
-    filterFavoritesOnly: false,
     filterSingleRider: false,
-    filterHasWaitTime: false,
+    filterMaintOrIssue: false,
     filterLt: null,
   },
   meta: {
@@ -88,30 +86,24 @@ function mountUI() {
   const root = document.getElementById("ppg-wachttijden");
   root.innerHTML = `
     <div class="ppgwt" style="--ppg-accent:${escapeAttr(CONFIG.accent)};">
+      <div class="ppgwt__liveBar">
+        <div class="ppgwt__liveWrapContainer">
+          <div class="ppgwt__liveWrap" id="ppgwt-liveWrap" data-tooltip="Laden...">
+            <span class="ppgwt__dot" id="ppgwt-dot"></span>
+            <span class="ppgwt__liveText" id="ppgwt-liveText">Laden...</span>
+          </div>
+          <div class="ppgwt__liveInfo" id="ppgwt-liveInfo"></div>
+        </div>
+      </div>
+
       <div class="ppgwt__grid">
         <!-- LEFT -->
         <aside class="ppgwt__left">
-          <!-- Live + ververs boven totale wachttijd -->
-          <div class="ppgwt__liveBar">
-            <div class="ppgwt__liveWrapContainer">
-              <div class="ppgwt__liveWrap" id="ppgwt-liveWrap" data-tooltip="Laden...">
-                <span class="ppgwt__dot" id="ppgwt-dot"></span>
-                <span class="ppgwt__liveText" id="ppgwt-liveText">Laden...</span>
-              </div>
-              <div class="ppgwt__liveInfo" id="ppgwt-liveInfo"></div>
-            </div>
-            <button class="ppgwt__btn ppgwt__btn--ghost" id="ppgwt-refreshBtn" type="button">
-              <span class="ppgwt__spinner" id="ppgwt-spinner"></span>
-              Ververs
-            </button>
-          </div>
-
-          <!-- ✅ aparte card voor totale wachttijd + parkopeningsinfo -->
           <div class="ppgwt__card ppgwt__card--stat">
             <h2 class="ppgwt__statLabel">Totale wachttijd</h2>
             <div class="ppgwt__statValue" id="ppgwt-totalWaitValue">-</div>
             <div class="ppgwt__statPark" id="ppgwt-parkHours"></div>
-            <div class="ppgwt__statSub" id="ppgwt-refreshHint"></div>
+            <span class="ppgwt__statTag ppgwt__statTag--closed" id="ppgwt-parkClosedTag" style="display:none;">Gesloten</span>
           </div>
 
           <div class="ppgwt__card">
@@ -120,8 +112,21 @@ function mountUI() {
               <span class="ppgwt__pill" id="ppgwt-bestCount">-</span>
             </div>
             <div class="ppgwt__list" id="ppgwt-bestList"></div>
-            <div class="ppgwt__empty" id="ppgwt-bestEmpty" style="display:none;">
-              Geen bruikbare wachttijden in je favorieten. Voeg favorieten toe door op het sterretje bij een attractie te klikken.
+            <div class="ppgwt__empty ppgwt__empty--favorites" id="ppgwt-bestEmpty" style="display:none;">
+              <span class="ppgwt__emptyText">Voeg favorieten toe</span>
+              <i class="far fa-star ppgwt__emptyIcon" aria-hidden="true"></i>
+            </div>
+          </div>
+
+          <div class="ppgwt__card">
+            <div class="ppgwt__cardHeader">
+              <h2 class="ppgwt__h3">Storingen & onderhoud</h2>
+              <span class="ppgwt__pill" id="ppgwt-maintCount">-</span>
+            </div>
+            <div class="ppgwt__list" id="ppgwt-maintList"></div>
+            <div class="ppgwt__empty ppgwt__empty--maint" id="ppgwt-maintEmpty" style="display:none;">
+              <span class="ppgwt__emptyText">Geen storingen of onderhoud</span>
+              <i class="fas fa-check-circle ppgwt__emptyIcon" aria-hidden="true"></i>
             </div>
           </div>
         </aside>
@@ -143,12 +148,10 @@ function mountUI() {
               <div class="ppgwt__toolbar">
                 <span class="ppgwt__chipsLabel">Filters</span>
                 <div class="ppgwt__chips" id="ppgwt-chips">
-                  <button class="ppgwt__chip" data-chip="open" type="button">Alleen open</button>
-                  <button class="ppgwt__chip" data-chip="hasWait" type="button">Met wachttijd</button>
+                  <button class="ppgwt__chip" data-chip="maint" type="button">In onderhoud/storing</button>
                   <button class="ppgwt__chip" data-chip="lt15" type="button">≤ 15 min</button>
                   <button class="ppgwt__chip" data-chip="lt30" type="button">≤ 30 min</button>
                   <button class="ppgwt__chip" data-chip="lt60" type="button">≤ 60 min</button>
-                  <button class="ppgwt__chip" data-chip="favorites" type="button">Mijn lijst</button>
                   <button class="ppgwt__chip" data-chip="single" type="button">Single rider</button>
                 </div>
               </div>
@@ -202,18 +205,6 @@ function wireEvents() {
       if (bar) bar.classList.toggle("is-infoOpen");
       return;
     }
-  });
-
-  // Refresh + anti spam
-  root.addEventListener("click", (e) => {
-    const btn = e.target.closest("#ppgwt-refreshBtn");
-    if (!btn) return;
-    const now = Date.now();
-    if (now < state.meta.manualCooldownUntil) return;
-    fetchAndRender({ reason: "manual" });
-    state.meta.manualCooldownUntil = now + CONFIG.manualCooldownMs;
-    renderRefreshHint("Verversd ✓");
-    setTimeout(() => renderRefreshHint(""), 2500);
   });
 
   // Toggle favorites edit
@@ -433,6 +424,7 @@ function renderAll() {
   renderMeta();
   renderTotalWaitCard();
   renderBestFromFavorites();
+  renderMaintOrIssueCard();
   renderFavorites();
   syncChipUI();
   renderAttractions();
@@ -508,6 +500,7 @@ function renderTotalWaitCard() {
   if (valueEl) valueEl.textContent = total > 0 ? `${total} min` : "-";
 
   const parkEl = document.getElementById("ppgwt-parkHours");
+  const closedTagEl = document.getElementById("ppgwt-parkClosedTag");
   if (parkEl) {
     const info = getParkOpeningInfo();
     if (info.fromTo) {
@@ -515,38 +508,21 @@ function renderTotalWaitCard() {
         info.openNow === true
           ? "Park open"
           : info.openNow === false
-            ? "Park gesloten"
+            ? "Officieel gesloten"
             : "Openingstijden";
       parkEl.textContent = `${status} · ${info.fromTo}`;
       parkEl.style.opacity = "1";
+      if (closedTagEl) closedTagEl.style.display = info.openNow === false ? "inline-block" : "none";
     } else {
       parkEl.textContent = "";
       parkEl.style.opacity = "0";
+      if (closedTagEl) closedTagEl.style.display = "none";
     }
   }
 }
 
-function renderRefreshHint(text) {
-  const el = document.getElementById("ppgwt-refreshHint");
-  if (!el) return;
-  el.textContent = text || "";
-  el.style.opacity = text ? "1" : "0";
-}
-
-function updateRefreshButtonState() {
-  const btn = document.getElementById("ppgwt-refreshBtn");
-  if (!btn) return;
-  const now = Date.now();
-  const cooling = now < state.meta.manualCooldownUntil;
-  btn.disabled = cooling || state.meta.isRefreshing;
-
-  if (cooling) {
-    const left = Math.ceil((state.meta.manualCooldownUntil - now) / 1000);
-    btn.innerHTML = `<span class="ppgwt__spinner"></span> Wacht ${left}s`;
-  } else {
-    btn.innerHTML = `<span class="ppgwt__spinner ${state.meta.isRefreshing ? "is-on" : ""}" id="ppgwt-spinner"></span> Ververs`;
-  }
-}
+function renderRefreshHint() {}
+function updateRefreshButtonState() {}
 
 function setRefreshing(on) {
   state.meta.isRefreshing = on;
@@ -562,23 +538,58 @@ function renderBestFromFavorites() {
   const favSet = new Set(state.favorites);
 
   const candidates = attractions
-    .filter((a) => favSet.has(a.Id))
-    .filter((a) => a.State === "open")
-    .filter((a) => typeof a.WaitingTime === "number" && a.WaitingTime >= 0)
-    .sort((a, b) => a.WaitingTime - b.WaitingTime);
+    .filter((a) => favSet.has(favId(a.Id)))
+    .sort((a, b) => {
+      if (a.State === "open" && b.State !== "open") return -1;
+      if (b.State === "open" && a.State !== "open") return 1;
+      const aw = typeof a.WaitingTime === "number" && a.WaitingTime >= 0 ? a.WaitingTime : 0;
+      const bw = typeof b.WaitingTime === "number" && b.WaitingTime >= 0 ? b.WaitingTime : 0;
+      if (aw !== bw) return aw - bw;
+      return (a.Name || "").localeCompare(b.Name || "", CONFIG.locale);
+    });
 
   const best = candidates.slice(0, CONFIG.topNFromFavorites);
-  countEl.textContent = best.length ? String(best.length) : "0";
+  countEl.textContent = String(best.length);
 
   listEl.innerHTML = "";
   if (!best.length) {
-    emptyEl.style.display = "block";
+    emptyEl.style.display = "flex";
     return;
   }
   emptyEl.style.display = "none";
 
   for (const a of best)
-    listEl.appendChild(renderAttractionCard(a, { compact: true }));
+    listEl.appendChild(renderAttractionCard(a, { compact: true, showZeroWait: true }));
+}
+
+function renderMaintOrIssueCard() {
+  const listEl = document.getElementById("ppgwt-maintList");
+  const emptyEl = document.getElementById("ppgwt-maintEmpty");
+  const countEl = document.getElementById("ppgwt-maintCount");
+
+  if (!listEl || !emptyEl || !countEl) return;
+
+  const attractions = state.normalized?.attractions || [];
+  const issues = attractions
+    .filter((a) => isMaintenanceOrMalfunction(a.State))
+    .sort((a, b) => {
+      const aMaint = a.State === "inonderhoud";
+      const bMaint = b.State === "inonderhoud";
+      if (aMaint && !bMaint) return -1;
+      if (!aMaint && bMaint) return 1;
+      return (a.Name || "").localeCompare(b.Name || "", CONFIG.locale);
+    });
+
+  countEl.textContent = String(issues.length);
+  listEl.innerHTML = "";
+
+  if (!issues.length) {
+    emptyEl.style.display = "flex";
+    return;
+  }
+  emptyEl.style.display = "none";
+  for (const a of issues)
+    listEl.appendChild(renderAttractionCard(a, { compact: false, noAction: true }));
 }
 
 function renderFavorites() {
@@ -607,7 +618,7 @@ function renderFavorites() {
     <div class="ppgwt__favGrid">
       ${sorted
         .map((a) => {
-          const checked = state.favorites.includes(a.Id);
+          const checked = isFavorite(a.Id);
           return `
           <label class="ppgwt__favItem">
             <input type="checkbox" data-fav-checkbox="${escapeHtml(a.Id)}" ${checked ? "checked" : ""} />
@@ -694,11 +705,11 @@ function renderFoodShopList(containerId, emptyId, items) {
 /** =========================
  * CARDS
  * ========================= */
-function renderAttractionCard(item, { compact }) {
-  const fav = state.favorites.includes(item.Id);
+function renderAttractionCard(item, { compact, noAction = false, showZeroWait = false } = {}) {
+  const fav = isFavorite(item.Id);
 
   const card = document.createElement("div");
-  card.className = `ppgwt__row ${compact ? "is-compact" : ""} ${fav ? "is-fav" : ""}`;
+  card.className = `ppgwt__row ${compact ? "is-compact" : ""} ${fav ? "is-fav" : ""} ${noAction ? "is-noAction" : ""}`;
 
   const left = document.createElement("div");
   left.className = "ppgwt__rowLeft";
@@ -729,7 +740,7 @@ function renderAttractionCard(item, { compact }) {
   if (maint) lines.push({ type: "maint", text: maint });
 
   left.appendChild(name);
-  if (!compact && lines.length > 0) {
+  if ((!compact || noAction) && lines.length > 0) {
     const sub = document.createElement("div");
     sub.className = "ppgwt__sub";
     sub.innerHTML = lines
@@ -757,25 +768,26 @@ function renderAttractionCard(item, { compact }) {
 
   const badge = document.createElement("span");
   badge.className = `ppgwt__badge ${badgeClassAttraction(item)}`;
-  badge.textContent = badgeTextAttraction(item);
-
-  const actionBtn = document.createElement("button");
-  actionBtn.type = "button";
-  actionBtn.setAttribute("data-star-id", item.Id);
-  if (compact) {
-    actionBtn.className = "ppgwt__trashBtn";
-    actionBtn.setAttribute("aria-label", "Verwijder uit favorieten");
-    actionBtn.innerHTML = '<i class="fas fa-trash-alt" aria-hidden="true"></i>';
-  } else {
-    actionBtn.className = `ppgwt__star ${fav ? "is-on" : ""}`;
-    actionBtn.setAttribute("aria-label", fav ? "Verwijder favoriet" : "Maak favoriet");
-    actionBtn.innerHTML = fav
-      ? '<i class="fas fa-star" aria-hidden="true"></i>'
-      : '<i class="far fa-star" aria-hidden="true"></i>';
-  }
+  badge.textContent = badgeTextAttraction(item, { showZeroWait });
 
   right.appendChild(badge);
-  right.appendChild(actionBtn);
+  if (!noAction) {
+    const actionBtn = document.createElement("button");
+    actionBtn.type = "button";
+    actionBtn.setAttribute("data-star-id", item.Id);
+    if (compact) {
+      actionBtn.className = "ppgwt__trashBtn";
+      actionBtn.setAttribute("aria-label", "Verwijder uit favorieten");
+      actionBtn.innerHTML = '<i class="fas fa-trash-alt" aria-hidden="true"></i>';
+    } else {
+      actionBtn.className = `ppgwt__star ${fav ? "is-on" : ""}`;
+      actionBtn.setAttribute("aria-label", fav ? "Verwijder favoriet" : "Maak favoriet");
+      actionBtn.innerHTML = fav
+        ? '<i class="fas fa-star" aria-hidden="true"></i>'
+        : '<i class="far fa-star" aria-hidden="true"></i>';
+    }
+    right.appendChild(actionBtn);
+  }
 
   card.appendChild(left);
   card.appendChild(right);
@@ -958,6 +970,19 @@ function getOpeningInfo(item) {
     };
   if (item.State === "gesloten")
     return { badgeText: "Gesloten", badgeClass: "is-closed", text: "Gesloten" };
+  if (item.State === "inonderhoud")
+    return { badgeText: "Onderhoud", badgeClass: "is-maint", text: "In onderhoud" };
+  if (item.State === "buitenbedrijf")
+    return { badgeText: "Storing", badgeClass: "is-issue", text: "Langer gesloten (storing)" };
+  if (item.State === "tijdelijkbuitenbedrijf")
+    return { badgeText: "Storing", badgeClass: "is-issue", text: "Tijdelijk gesloten (storing)" };
+  if (isUnknownAttractionState(item.State) && getParkOpeningInfo().openNow === false) {
+    return {
+      badgeText: "Gesloten vandaag",
+      badgeClass: "is-closed",
+      text: "Gesloten (park is dicht)",
+    };
+  }
   return {
     badgeText: formatStateShort(item.State),
     badgeClass: "is-unknown",
@@ -1017,21 +1042,15 @@ function filterByQuery(list) {
 
 function applyGlobalFilters(list) {
   const q = (state.ui.query || "").toLowerCase();
-  const favSet = new Set(state.favorites);
 
   return list.filter((a) => {
     if (q) {
       const hay = `${a.Name || ""} ${a.Id || ""}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
-    if (state.ui.filterOpen && a.State !== "open") return false;
-    if (state.ui.filterFavoritesOnly && !favSet.has(a.Id)) return false;
     if (state.ui.filterSingleRider && !a.singlerider) return false;
+    if (state.ui.filterMaintOrIssue && !isMaintenanceOrMalfunction(a.State)) return false;
 
-    if (state.ui.filterHasWaitTime) {
-      if (!(typeof a.WaitingTime === "number" && a.WaitingTime >= 0))
-        return false;
-    }
     if (typeof state.ui.filterLt === "number") {
       if (!(typeof a.WaitingTime === "number" && a.WaitingTime >= 0))
         return false;
@@ -1041,7 +1060,18 @@ function applyGlobalFilters(list) {
   });
 }
 
+function isMaintenanceOrMalfunction(st) {
+  return st === "inonderhoud" || st === "buitenbedrijf" || st === "tijdelijkbuitenbedrijf";
+}
+
 function sortByHipLongestWait(a, b) {
+  const aIssue = isMaintenanceOrMalfunction(a.State);
+  const bIssue = isMaintenanceOrMalfunction(b.State);
+  if (aIssue && !bIssue) return 1;
+  if (!aIssue && bIssue) return -1;
+  if (aIssue && bIssue)
+    return (a.Name || "").localeCompare(b.Name || "", CONFIG.locale);
+
   if (a.State === "open" && b.State !== "open") return -1;
   if (b.State === "open" && a.State !== "open") return 1;
 
@@ -1058,6 +1088,11 @@ function sortByHipLongestWait(a, b) {
 /** =========================
  * BADGES (Attractions)
  * ========================= */
+function isUnknownAttractionState(st) {
+  const known = ["open", "gesloten", "nognietopen", "inonderhoud", "buitenbedrijf", "tijdelijkbuitenbedrijf"];
+  return !st || !known.includes(st);
+}
+
 function badgeClassAttraction(item) {
   if (item.State === "open") return "is-open";
   if (item.State === "gesloten") return "is-closed";
@@ -1065,14 +1100,19 @@ function badgeClassAttraction(item) {
   if (item.State === "tijdelijkbuitenbedrijf" || item.State === "buitenbedrijf")
     return "is-issue";
   if (item.State === "nognietopen") return "is-upcoming";
+  if (isUnknownAttractionState(item.State) && getParkOpeningInfo().openNow === false) return "is-closed";
   return "is-unknown";
 }
 
-function badgeTextAttraction(item) {
+function badgeTextAttraction(item, opts) {
+  const showZeroWait = opts?.showZeroWait === true;
   if (item.State === "open") {
-    if (typeof item.WaitingTime === "number") return `${item.WaitingTime} min`;
+    const wt = typeof item.WaitingTime === "number" && item.WaitingTime >= 0 ? item.WaitingTime : null;
+    if (wt !== null) return `${wt} min`;
+    if (showZeroWait) return "0 min";
     return "Open";
   }
+  if (isUnknownAttractionState(item.State) && getParkOpeningInfo().openNow === false) return "Gesloten vandaag";
   return formatStateShort(item.State);
 }
 
@@ -1089,13 +1129,10 @@ function miniBadgeClass(st) {
  * CHIPS
  * ========================= */
 function toggleChip(which) {
-  if (which === "open") state.ui.filterOpen = !state.ui.filterOpen;
-  if (which === "favorites")
-    state.ui.filterFavoritesOnly = !state.ui.filterFavoritesOnly;
+  if (which === "maint")
+    state.ui.filterMaintOrIssue = !state.ui.filterMaintOrIssue;
   if (which === "single")
     state.ui.filterSingleRider = !state.ui.filterSingleRider;
-  if (which === "hasWait")
-    state.ui.filterHasWaitTime = !state.ui.filterHasWaitTime;
 
   if (which === "lt15")
     state.ui.filterLt = state.ui.filterLt === 15 ? null : 15;
@@ -1110,10 +1147,8 @@ function syncChipUI() {
   root.querySelectorAll("[data-chip]").forEach((btn) => {
     const k = btn.getAttribute("data-chip");
     let on = false;
-    if (k === "open") on = state.ui.filterOpen;
-    if (k === "favorites") on = state.ui.filterFavoritesOnly;
+    if (k === "maint") on = state.ui.filterMaintOrIssue;
     if (k === "single") on = state.ui.filterSingleRider;
-    if (k === "hasWait") on = state.ui.filterHasWaitTime;
     if (k === "lt15") on = state.ui.filterLt === 15;
     if (k === "lt30") on = state.ui.filterLt === 30;
     if (k === "lt60") on = state.ui.filterLt === 60;
@@ -1130,7 +1165,7 @@ function loadFavorites() {
     if (!raw) return CONFIG.defaultFavoriteIds.slice();
     const arr = JSON.parse(raw);
     if (!Array.isArray(arr)) return CONFIG.defaultFavoriteIds.slice();
-    return arr;
+    return arr.map((id) => String(id));
   } catch {
     return CONFIG.defaultFavoriteIds.slice();
   }
@@ -1143,17 +1178,27 @@ function saveFavorites() {
     );
   } catch {}
 }
+function favId(id) {
+  return id == null ? "" : String(id);
+}
 function toggleFavorite(id) {
-  const i = state.favorites.indexOf(id);
+  const sid = favId(id);
+  if (!sid) return;
+  const i = state.favorites.indexOf(sid);
   if (i >= 0) state.favorites.splice(i, 1);
-  else state.favorites.push(id);
+  else state.favorites.push(sid);
   saveFavorites();
 }
 function setFavorite(id, on) {
-  const exists = state.favorites.includes(id);
-  if (on && !exists) state.favorites.push(id);
-  if (!on && exists) state.favorites = state.favorites.filter((x) => x !== id);
+  const sid = favId(id);
+  if (!sid) return;
+  const exists = state.favorites.includes(sid);
+  if (on && !exists) state.favorites.push(sid);
+  if (!on && exists) state.favorites = state.favorites.filter((x) => x !== sid);
   saveFavorites();
+}
+function isFavorite(id) {
+  return state.favorites.includes(favId(id));
 }
 
 /** =========================
@@ -1238,31 +1283,24 @@ function getParkOpeningInfo() {
   return { openNow, fromTo, hourFrom: from, hourTo: to };
 }
 
-/** Bepaal of we de volledige widget tonen of een fallback (data niet beschikbaar / park gesloten). */
+/** Bepaal of we de volledige widget tonen of een fallback (alleen wanneer er geen data is). */
 function getFallbackMessage() {
   const list = state.data?.AttractionInfo;
   if (!state.data || !Array.isArray(list) || list.length === 0)
     return "Data niet beschikbaar";
-  const { openNow } = getParkOpeningInfo();
-  const attractions = state.normalized?.attractions || [];
-  const hasAnyWaitTime = attractions.some(
-    (a) =>
-      a.State === "open" &&
-      typeof a.WaitingTime === "number" &&
-      a.WaitingTime >= 0,
-  );
-  if (openNow === false && !hasAnyWaitTime) return "Park gesloten";
   return null;
 }
 
 function renderFallbackState(message) {
   const root = document.getElementById("ppg-wachttijden");
   if (!root) return;
+  const showMuted = message !== "Park gesloten";
+  const displayMessage = message === "Park gesloten" ? "🌙 " + message : message;
   root.innerHTML = `
     <div class="ppgwt" style="--ppg-accent:${escapeAttr(CONFIG.accent)};">
       <div class="ppgwt__card">
-        <h3 class="ppgwt__h3">${escapeHtml(message)}</h3>
-        <div class="ppgwt__muted">Er is nu niets te tonen. Probeer het later opnieuw.</div>
+        <h3 class="ppgwt__h3">${escapeHtml(displayMessage)}</h3>
+        ${showMuted ? '<div class="ppgwt__muted">Er is nu niets te tonen. Probeer het later opnieuw.</div>' : ''}
       </div>
     </div>
   `;
