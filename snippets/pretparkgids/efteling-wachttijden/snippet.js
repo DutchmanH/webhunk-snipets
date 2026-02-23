@@ -15,6 +15,10 @@ const CONFIG = {
 
   topNFromFavorites: 5,
 
+  /** Max. aantal zichtbaar in "Je kan nu het beste naar" / "Storingen & onderhoud" voordat er "Toon meer" komt */
+  bestCollapsedLimit: 3,
+  maintCollapsedLimit: 3,
+
   defaultFavoriteIds: [
     "python",
     "droomvlucht",
@@ -50,6 +54,8 @@ const state = {
     filterSingleRider: false,
     filterMaintOrIssue: false,
     filterLt: null,
+    bestCollapsed: true,
+    maintCollapsed: true,
   },
   meta: {
     lastUpdateTimestamp: null,
@@ -112,6 +118,7 @@ function mountUI() {
               <span class="ppgwt__pill" id="ppgwt-bestCount">-</span>
             </div>
             <div class="ppgwt__list" id="ppgwt-bestList"></div>
+            <div class="ppgwt__bestToggle" id="ppgwt-bestToggle"></div>
             <div class="ppgwt__empty ppgwt__empty--favorites" id="ppgwt-bestEmpty" style="display:none;">
               <span class="ppgwt__emptyText">Voeg favorieten toe</span>
               <i class="far fa-star ppgwt__emptyIcon" aria-hidden="true"></i>
@@ -124,6 +131,7 @@ function mountUI() {
               <span class="ppgwt__pill" id="ppgwt-maintCount">-</span>
             </div>
             <div class="ppgwt__list" id="ppgwt-maintList"></div>
+            <div class="ppgwt__maintToggle" id="ppgwt-maintToggle"></div>
             <div class="ppgwt__empty ppgwt__empty--maint" id="ppgwt-maintEmpty" style="display:none;">
               <span class="ppgwt__emptyText">Geen storingen of onderhoud</span>
               <i class="fas fa-check-circle ppgwt__emptyIcon" aria-hidden="true"></i>
@@ -246,6 +254,19 @@ function wireEvents() {
     const id = cb.getAttribute("data-fav-checkbox");
     setFavorite(id, cb.checked);
     renderAll();
+  });
+
+  root.addEventListener("click", (e) => {
+    if (e.target.closest("[data-maint-toggle]")) {
+      state.ui.maintCollapsed = !state.ui.maintCollapsed;
+      renderMaintOrIssueCard();
+      return;
+    }
+    if (e.target.closest("[data-best-toggle]")) {
+      state.ui.bestCollapsed = !state.ui.bestCollapsed;
+      renderBestFromFavorites();
+      return;
+    }
   });
 
   document.addEventListener("visibilitychange", () => {
@@ -533,6 +554,8 @@ function renderBestFromFavorites() {
   const listEl = document.getElementById("ppgwt-bestList");
   const emptyEl = document.getElementById("ppgwt-bestEmpty");
   const countEl = document.getElementById("ppgwt-bestCount");
+  const toggleEl = document.getElementById("ppgwt-bestToggle");
+  if (!listEl || !emptyEl || !countEl) return;
 
   const attractions = state.normalized?.attractions || [];
   const favSet = new Set(state.favorites);
@@ -552,21 +575,44 @@ function renderBestFromFavorites() {
   countEl.textContent = String(best.length);
 
   listEl.innerHTML = "";
+  if (toggleEl) toggleEl.innerHTML = "";
+
   if (!best.length) {
     emptyEl.style.display = "flex";
+    if (toggleEl) toggleEl.style.display = "none";
     return;
   }
   emptyEl.style.display = "none";
 
-  for (const a of best)
+  const limit = CONFIG.bestCollapsedLimit;
+  const collapsed = state.ui.bestCollapsed;
+  const toShow =
+    collapsed && best.length > limit ? best.slice(0, limit) : best;
+
+  for (const a of toShow)
     listEl.appendChild(renderAttractionCard(a, { compact: true, showZeroWait: true }));
+
+  if (toggleEl && best.length > limit) {
+    toggleEl.style.display = "block";
+    const label = collapsed
+      ? `Toon meer (${best.length - limit})`
+      : "Inklappen";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ppgwt__bestToggleBtn";
+    btn.setAttribute("data-best-toggle", "");
+    btn.textContent = label;
+    toggleEl.appendChild(btn);
+  } else if (toggleEl) {
+    toggleEl.style.display = "none";
+  }
 }
 
 function renderMaintOrIssueCard() {
   const listEl = document.getElementById("ppgwt-maintList");
   const emptyEl = document.getElementById("ppgwt-maintEmpty");
   const countEl = document.getElementById("ppgwt-maintCount");
-
+  const toggleEl = document.getElementById("ppgwt-maintToggle");
   if (!listEl || !emptyEl || !countEl) return;
 
   const attractions = state.normalized?.attractions || [];
@@ -582,14 +628,37 @@ function renderMaintOrIssueCard() {
 
   countEl.textContent = String(issues.length);
   listEl.innerHTML = "";
+  if (toggleEl) toggleEl.innerHTML = "";
 
   if (!issues.length) {
     emptyEl.style.display = "flex";
+    if (toggleEl) toggleEl.style.display = "none";
     return;
   }
   emptyEl.style.display = "none";
-  for (const a of issues)
+
+  const limit = CONFIG.maintCollapsedLimit;
+  const collapsed = state.ui.maintCollapsed;
+  const toShow =
+    collapsed && issues.length > limit ? issues.slice(0, limit) : issues;
+
+  for (const a of toShow)
     listEl.appendChild(renderAttractionCard(a, { compact: false, noAction: true }));
+
+  if (toggleEl && issues.length > limit) {
+    toggleEl.style.display = "block";
+    const label = collapsed
+      ? `Toon meer (${issues.length - limit})`
+      : "Inklappen";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "ppgwt__maintToggleBtn";
+    btn.setAttribute("data-maint-toggle", "");
+    btn.textContent = label;
+    toggleEl.appendChild(btn);
+  } else if (toggleEl) {
+    toggleEl.style.display = "none";
+  }
 }
 
 function renderFavorites() {

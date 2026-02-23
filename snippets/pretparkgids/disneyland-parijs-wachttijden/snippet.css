@@ -1,5 +1,6 @@
 /* =========================================================
-   ✅ Rood op de CARDS, niet om alles heen
+   Disneyland Parijs Wachttijden – scope onder #ppg-wachttijden
+   Gebaseerd op Efteling snippet (geen tabs in markup)
    ========================================================= */
 #ppg-wachttijden .ppgwt {
   --accent: var(--ppg-accent);
@@ -10,13 +11,37 @@
   font-family: inherit;
 }
 
-/* Live balk boven de twee vlakken */
 #ppg-wachttijden .ppgwt__liveBar {
   display: flex;
   align-items: center;
   justify-content: flex-start;
   gap: 12px;
   margin-bottom: 14px;
+}
+
+#ppg-wachttijden .ppgwt__parkTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+#ppg-wachttijden .ppgwt__parkTab {
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  background: rgba(0, 0, 0, 0.06);
+  color: #1a1a1a;
+  font-weight: 950;
+  padding: 10px 16px;
+  border-radius: 14px;
+  cursor: pointer;
+}
+#ppg-wachttijden .ppgwt__parkTab:hover {
+  background: rgba(0, 0, 0, 0.1);
+  border-color: rgba(0, 0, 0, 0.18);
+}
+#ppg-wachttijden .ppgwt__parkTab.is-active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
 }
 
 #ppg-wachttijden .ppgwt__grid {
@@ -41,7 +66,6 @@
   margin-bottom: 14px;
 }
 
-/* Stat card */
 #ppg-wachttijden .ppgwt__card--stat {
   padding: 16px;
 }
@@ -110,7 +134,6 @@
   margin-bottom: 8px;
 }
 
-/* Live pill + tooltip (leesbaar op witte achtergrond) */
 #ppg-wachttijden .ppgwt__liveWrapContainer {
   position: relative;
 }
@@ -154,7 +177,6 @@
   color: #1a1a1a;
 }
 
-/* Live tooltip: blauw blok, alleen bij hover (desktop) of bij klik (mobiel) */
 #ppg-wachttijden .ppgwt__liveInfo {
   display: none;
   position: absolute;
@@ -184,7 +206,6 @@
   }
 }
 
-/* Buttons */
 #ppg-wachttijden .ppgwt__btn {
   border-radius: 999px;
   padding: 10px 14px;
@@ -220,18 +241,17 @@
   border: 2px solid rgba(219, 69, 52, 0.35);
   border-top-color: rgba(219, 69, 52, 1);
   display: none;
-  animation: spin 0.9s linear infinite;
+  animation: ppgwt-spin 0.9s linear infinite;
 }
 #ppg-wachttijden .ppgwt__spinner.is-on {
   display: inline-block;
 }
-@keyframes spin {
+@keyframes ppgwt-spin {
   to {
     transform: rotate(360deg);
   }
 }
 
-/* Pills, empty */
 #ppg-wachttijden .ppgwt__pill {
   font-size: 12px;
   font-weight: 950;
@@ -279,12 +299,10 @@
   color: #1e9b5a;
 }
 
-#ppg-wachttijden .ppgwt__bestToggle,
 #ppg-wachttijden .ppgwt__maintToggle {
   margin-top: 10px;
   display: none;
 }
-#ppg-wachttijden .ppgwt__bestToggleBtn,
 #ppg-wachttijden .ppgwt__maintToggleBtn {
   background: rgba(255, 255, 255, 0.2);
   border: 1px solid rgba(255, 255, 255, 0.35);
@@ -295,12 +313,28 @@
   border-radius: 999px;
   cursor: pointer;
 }
-#ppg-wachttijden .ppgwt__bestToggleBtn:hover,
 #ppg-wachttijden .ppgwt__maintToggleBtn:hover {
   background: rgba(255, 255, 255, 0.3);
 }
 
-/* List / rows */
+#ppg-wachttijden .ppgwt__bestToggle {
+  margin-top: 10px;
+  display: none;
+}
+#ppg-wachttijden .ppgwt__bestToggleBtn {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+#ppg-wachttijden .ppgwt__bestToggleBtn:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
 #ppg-wachttijden .ppgwt__list,
 #ppg-wachttijden .ppgwt__rows {
   display: flex;
@@ -311,7 +345,6 @@
   margin-top: 4px;
 }
 
-/* row: geen card-achtergrond; alleen favorieten krijgen een card-uitstraling */
 #ppg-wachttijden .ppgwt__row {
   display: flex;
   justify-content: space-between;
@@ -384,7 +417,6 @@
   font-weight: 950;
 }
 
-/* badges */
 #ppg-wachttijden .ppgwt__badge {
   font-weight: 950;
   font-size: 12px;
@@ -420,7 +452,6 @@
   border-color: rgba(255, 255, 255, 0.4);
 }
 
-/* mini badge (o.a. Single Rider) – zelfde contrast als hoofdbadges */
 #ppg-wachttijden .ppgwt__miniBadge {
   font-size: 11px;
   font-weight: 950;
@@ -455,7 +486,6 @@
   border-color: rgba(255, 255, 255, 0.45);
 }
 
-/* star */
 #ppg-wachttijden .ppgwt__star {
   border: none;
   background: transparent;
@@ -473,7 +503,6 @@
   color: #fff;
 }
 
-/* prullenbak-knop (beste-naar lijst, Font Awesome) */
 #ppg-wachttijden .ppgwt__trashBtn {
   border: none;
   background: transparent;
@@ -492,35 +521,6 @@
   display: block;
 }
 
-/* tabs */
-#ppg-wachttijden .ppgwt__tabs {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-#ppg-wachttijden .ppgwt__tab {
-  border: 1px solid rgba(255, 255, 255, 0.28);
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  font-weight: 950;
-  padding: 10px 12px;
-  border-radius: 14px;
-  cursor: pointer;
-}
-#ppg-wachttijden .ppgwt__tab.is-active {
-  background: #fff;
-  color: var(--accent);
-  border-color: rgba(255, 255, 255, 0.7);
-}
-#ppg-wachttijden .ppgwt__tabcontent {
-  display: none;
-}
-#ppg-wachttijden .ppgwt__tabcontent.is-active {
-  display: block;
-}
-
-/* toolbar */
 #ppg-wachttijden .ppgwt__toolbar {
   display: flex;
   flex-direction: column;
@@ -575,42 +575,3 @@
   border-color: rgba(255, 255, 255, 0.45);
 }
 
-/* favorites pills + edit list */
-#ppg-wachttijden .ppgwt__favPills {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-#ppg-wachttijden .ppgwt__favPill {
-  padding: 8px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  font-size: 14px;
-  font-weight: 950;
-  color: #fff;
-}
-#ppg-wachttijden .ppgwt__favGrid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 8px;
-  max-height: 360px;
-  overflow: auto;
-  padding-right: 6px;
-}
-#ppg-wachttijden .ppgwt__favItem {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  border-radius: 14px;
-  padding: 10px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  cursor: pointer;
-  font-weight: 950;
-  font-size: 15px;
-  color: #fff;
-}
-#ppg-wachttijden .ppgwt__favItem input {
-  transform: scale(1.1);
-}
