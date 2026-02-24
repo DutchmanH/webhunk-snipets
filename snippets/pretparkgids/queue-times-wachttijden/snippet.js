@@ -1,60 +1,101 @@
 /** =========================
- * CONFIG – Disneyland Parijs (meerdere parken, Queue-Times API)
+ * Queue-Times Wachttijden – generiek voor 1 t/m 3 park-API’s
+ * Configureer parken en tab-namen in CONFIG_PARKS hieronder.
  * ========================= */
+const API_BASE = "https://pretparkgids.nl/api/wachttijden/";
+
+/**
+ * Configuratie parken (max 3).
+ *
+ * - parks: array van 1 t/m 3 parken. Elk item is een string (URL of slug) of een object:
+ *   - url: volledige JSON-URL of alleen slug (bijv. "toverland" -> wordt .../toverland.json)
+ *   - name: label op de tab-knoppen (optioneel; anders wordt naam uit de url afgeleid, bijv. "walibi-holland" -> "Walibi Holland")
+ * - Bij 1 park: geen tabs. Bij 2 of 3 parken: tab-knoppen om te wisselen; de namen komen uit name of uit de url.
+ */
+const CONFIG_PARKS = [{ url: "walibi-holland", name: "Walibi Holland" }];
+
+function resolveParkConfigs() {
+  const root = document.getElementById("ppg-wachttijden");
+  const maxParks = 3;
+
+  function slugFromUrl(url) {
+    if (!url) return "";
+    const m = String(url).match(/\/([^/]+)\.json$/);
+    return m
+      ? m[1]
+      : String(url)
+          .replace(/\.json$/i, "")
+          .trim() || "";
+  }
+  function nameFromSlug(slug) {
+    if (!slug) return "Park";
+    return slug
+      .split("-")
+      .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+      .join(" ");
+  }
+  function toFullUrl(url) {
+    const u = String(url).trim();
+    if (u.startsWith("http")) return u;
+    return API_BASE + u.replace(/\.json$/i, "") + ".json";
+  }
+
+  let list = Array.isArray(CONFIG_PARKS) ? CONFIG_PARKS.slice(0, maxParks) : [];
+  if (!list.length && root) {
+    const url1 = (root.getAttribute("data-api-url") || "").trim();
+    const url2 = (root.getAttribute("data-api-url-2") || "").trim();
+    const url3 = (root.getAttribute("data-api-url-3") || "").trim();
+    if (url1) list.push({ url: url1, name: "" });
+    if (url2) list.push({ url: url2, name: "" });
+    if (url3) list.push({ url: url3, name: "" });
+  }
+
+  const configs = list
+    .map((entry) => {
+      const url = typeof entry === "string" ? entry : entry && entry.url;
+      const name =
+        typeof entry === "object" && entry && entry.name != null
+          ? String(entry.name)
+          : null;
+      const apiUrl = toFullUrl(url);
+      const slug = slugFromUrl(apiUrl) || slugFromUrl(url);
+      return {
+        apiUrl,
+        name: name && name.trim() ? name.trim() : nameFromSlug(slug),
+      };
+    })
+    .filter((c) => c.apiUrl);
+
+  const parkKey = configs.length
+    ? slugFromUrl(configs[0].apiUrl)
+    : "queue-times";
+  return { parkConfigs: configs, parkKey };
+}
+
+const resolved = resolveParkConfigs();
+
 const CONFIG = {
-  parkKey: "disneyland-parijs",
+  parkKey: resolved.parkKey,
+  parkConfigs: resolved.parkConfigs,
   locale: "nl-NL",
-
-  /** Meerdere parken: elk met apiUrl en weergavenaam. Eén item = geen parktab. */
-  parkConfigs: [
-    {
-      apiUrl: "https://pretparkgids.nl/api/wachttijden/disneyland-paris-disney-park-paris.json",
-      name: "Disneyland Park",
-    },
-    {
-      apiUrl: "https://pretparkgids.nl/api/wachttijden/disneyland-paris-walt-disney-studios.json",
-      name: "Walt Disney Studios",
-    },
-  ],
-
   accent: "#db4534",
   refreshIntervalMs: 45000,
   manualCooldownMs: 8000,
-
   liveGoodMaxMinutes: 9,
   liveWarnMaxMinutes: 19,
-
   topNFromFavorites: 5,
-
-  /** Max. aantal zichtbaar in "Je kan nu het beste naar" / "Gesloten" voordat er "Toon meer" komt */
   bestCollapsedLimit: 3,
   maintCollapsedLimit: 3,
-
-  defaultFavoriteIds: [
-    "40",
-    "32",
-    "35",
-    "37",
-    "31",
-    "10848",
-    "25",
-    "22",
-    "8",
-  ],
+  defaultFavoriteIds: [],
 };
 
-/** =========================
- * STATE
- * ========================= */
 const STORAGE_KEYS = {
   favorites: `ppg_waiting_${CONFIG.parkKey}_favorites_v4`,
   cache: `ppg_waiting_${CONFIG.parkKey}_cache_v4`,
 };
 
 const state = {
-  /** Per park: { data, normalized, lastUpdateTimestamp, dataAgeMinutes } */
   parkData: [],
-  /** Huidig gekozen park (index in parkConfigs) */
   currentParkIndex: 0,
   data: null,
   normalized: null,
@@ -79,21 +120,41 @@ const state = {
 
 bootstrap();
 
-/** =========================
- * INIT
- * ========================= */
 function bootstrap() {
+  if (!CONFIG.parkConfigs.length) {
+    renderNoUrlState();
+    return;
+  }
   mountUI();
   wireEvents();
   fetchAndRender({ reason: "init" });
   startAutoRefreshTick();
 }
 
+function renderNoUrlState() {
+  const root = document.getElementById("ppg-wachttijden");
+  if (!root) return;
+  root.innerHTML = `
+    <div class="ppgwt" style="--ppg-accent:${escapeAttr(CONFIG.accent)};">
+      <div class="ppgwt__card">
+        <h3 class="ppgwt__h3">Queue-Times Wachttijden</h3>
+        <div class="ppgwt__muted">Vul in <code>snippet.js</code> het array <code>CONFIG_PARKS</code> in (max 3 parken). Elk item: <code>{ url: &quot;slug&quot;, name: &quot;Tabnaam&quot; }</code> of alleen een url-string.</div>
+      </div>
+    </div>
+  `;
+}
+
 function ensureFontAwesome() {
-  if (document.querySelector('link[href*="font-awesome"], link[href*="fontawesome"]')) return;
+  if (
+    document.querySelector(
+      'link[href*="font-awesome"], link[href*="fontawesome"]',
+    )
+  )
+    return;
   const link = document.createElement("link");
   link.rel = "stylesheet";
-  link.href = "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css";
+  link.href =
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css";
   document.head.appendChild(link);
 }
 
@@ -126,7 +187,7 @@ function mountUI() {
       </div>
       ${parkTabsHtml}
 
-      <div class="ppgwt__grid">
+      <div class="ppgwt__grid" id="ppgwt-grid">
         <aside class="ppgwt__left">
           <div class="ppgwt__card ppgwt__card--stat">
             <h2 class="ppgwt__statLabel">Totale wachttijd</h2>
@@ -247,9 +308,6 @@ function wireEvents() {
   });
 }
 
-/** =========================
- * AUTO REFRESH
- * ========================= */
 function startAutoRefreshTick() {
   setInterval(() => {
     if (document.hidden) return;
@@ -260,9 +318,6 @@ function startAutoRefreshTick() {
   }, 250);
 }
 
-/** =========================
- * SYNC STATE FROM CURRENT PARK
- * ========================= */
 function syncStateFromCurrentPark() {
   const cur = state.parkData[state.currentParkIndex];
   if (!cur) {
@@ -278,9 +333,6 @@ function syncStateFromCurrentPark() {
   state.meta.dataAgeMinutes = cur.dataAgeMinutes;
 }
 
-/** =========================
- * FETCH + CACHE
- * ========================= */
 async function fetchAndRender() {
   setRefreshing(true);
   try {
@@ -309,9 +361,13 @@ async function fetchAndRender() {
   } catch (err) {
     console.error(err);
     const cached = loadCache();
-    if (cached?.parks && Array.isArray(cached.parks) && cached.parks.length > 0) {
+    if (
+      cached?.parks &&
+      Array.isArray(cached.parks) &&
+      cached.parks.length > 0
+    ) {
       state.meta.usingCache = true;
-      state.parkData = cached.parks.map((data, i) => {
+      state.parkData = cached.parks.map((data) => {
         const stamp = getLatestTimestamp(data);
         const dataAgeMinutes = stamp
           ? Math.floor((Date.now() - stamp.getTime()) / 60000)
@@ -383,9 +439,6 @@ function loadCache() {
   }
 }
 
-/** =========================
- * NORMALIZE – Queue-Times lands/rides → Efteling-achtige vorm
- * ========================= */
 function mapRideToItem(ride, landName) {
   const wait = normalizeNumberOrNull(ride.wait_time);
   return {
@@ -402,10 +455,11 @@ function isSingleRiderName(name) {
 }
 
 function baseNameFromSingleRider(name) {
-  return String(name || "").replace(/\s+Single Rider$/i, "").trim();
+  return String(name || "")
+    .replace(/\s+Single Rider$/i, "")
+    .trim();
 }
 
-/** Normaliseert één park-response (data) naar { attractions }. */
 function normalizeDataForPark(data) {
   const lands = Array.isArray(data?.lands) ? data.lands : [];
   const allRides = [];
@@ -449,9 +503,6 @@ function normalizeNumberOrNull(v) {
   return Number.isFinite(n) ? n : null;
 }
 
-/** =========================
- * RENDER
- * ========================= */
 function renderAll() {
   const fallback = getFallbackMessage();
   if (fallback) {
@@ -499,7 +550,8 @@ function renderMeta() {
   const dotEl = document.getElementById("ppgwt-dot");
   const liveTextEl = document.getElementById("ppgwt-liveText");
   if (dotEl) dotEl.className = `ppgwt__dot is-${cls}`;
-  if (liveTextEl) liveTextEl.textContent = state.meta.usingCache ? `${label} (cache)` : label;
+  if (liveTextEl)
+    liveTextEl.textContent = state.meta.usingCache ? `${label} (cache)` : label;
 
   const lastUpdate = stamp
     ? stamp.toLocaleString(CONFIG.locale, {
@@ -511,12 +563,15 @@ function renderMeta() {
       })
     : "-";
   const left = Math.floor(state.meta.nextRefreshInMs / 1000);
-  const agePart = typeof age === "number" ? `ca. ${age} min oud` : "leeftijd onbekend";
-  const tooltip = `Wachttijden (Disneyland Parijs) ${agePart} · laatst: ${lastUpdate} · vernieuwt over ${left} s`;
+  const agePart =
+    typeof age === "number" ? `ca. ${age} min oud` : "leeftijd onbekend";
+  const parkName = CONFIG.parkConfigs[state.currentParkIndex]?.name || "Park";
+  const tooltip = `Wachttijden (${parkName}) ${agePart} · laatst: ${lastUpdate} · vernieuwt over ${left} s`;
   const wrapEl = document.getElementById("ppgwt-liveWrap");
   if (wrapEl) wrapEl.setAttribute("data-tooltip", tooltip);
   const liveInfoEl = document.getElementById("ppgwt-liveInfo");
-  if (liveInfoEl) liveInfoEl.textContent = `Laatst: ${lastUpdate} · Vernieuwt over ${left} s`;
+  if (liveInfoEl)
+    liveInfoEl.textContent = `Laatst: ${lastUpdate} · Vernieuwt over ${left} s`;
 }
 
 function renderLiveTooltipOnly() {
@@ -532,12 +587,15 @@ function renderLiveTooltipOnly() {
     : "-";
   const left = Math.floor(state.meta.nextRefreshInMs / 1000);
   const age = state.meta.dataAgeMinutes;
-  const agePart = typeof age === "number" ? `ca. ${age} min oud` : "leeftijd onbekend";
-  const tooltip = `Wachttijden (Disneyland Parijs) ${agePart} · laatst: ${lastUpdate} · vernieuwt over ${left} s`;
+  const agePart =
+    typeof age === "number" ? `ca. ${age} min oud` : "leeftijd onbekend";
+  const parkName = CONFIG.parkConfigs[state.currentParkIndex]?.name || "Park";
+  const tooltip = `Wachttijden (${parkName}) ${agePart} · laatst: ${lastUpdate} · vernieuwt over ${left} s`;
   const wrapEl = document.getElementById("ppgwt-liveWrap");
   if (wrapEl) wrapEl.setAttribute("data-tooltip", tooltip);
   const liveInfoEl = document.getElementById("ppgwt-liveInfo");
-  if (liveInfoEl) liveInfoEl.textContent = `Laatst: ${lastUpdate} · Vernieuwt over ${left} s`;
+  if (liveInfoEl)
+    liveInfoEl.textContent = `Laatst: ${lastUpdate} · Vernieuwt over ${left} s`;
 }
 
 function renderTotalWaitCard() {
@@ -552,6 +610,18 @@ function updateRefreshButtonState() {}
 function setRefreshing(on) {
   state.meta.isRefreshing = on;
   updateRefreshButtonState();
+}
+
+function loadFavorites() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.favorites);
+    if (!raw) return CONFIG.defaultFavoriteIds.slice();
+    const arr = JSON.parse(raw);
+    if (!Array.isArray(arr)) return CONFIG.defaultFavoriteIds.slice();
+    return arr.map((id) => String(id));
+  } catch {
+    return CONFIG.defaultFavoriteIds.slice();
+  }
 }
 
 function renderBestFromFavorites() {
@@ -569,8 +639,14 @@ function renderBestFromFavorites() {
     .sort((a, b) => {
       if (a.State === "open" && b.State !== "open") return -1;
       if (b.State === "open" && a.State !== "open") return 1;
-      const aw = typeof a.WaitingTime === "number" && a.WaitingTime >= 0 ? a.WaitingTime : 0;
-      const bw = typeof b.WaitingTime === "number" && b.WaitingTime >= 0 ? b.WaitingTime : 0;
+      const aw =
+        typeof a.WaitingTime === "number" && a.WaitingTime >= 0
+          ? a.WaitingTime
+          : 0;
+      const bw =
+        typeof b.WaitingTime === "number" && b.WaitingTime >= 0
+          ? b.WaitingTime
+          : 0;
       if (aw !== bw) return aw - bw;
       return (a.Name || "").localeCompare(b.Name || "", CONFIG.locale);
     });
@@ -590,11 +666,12 @@ function renderBestFromFavorites() {
 
   const limit = CONFIG.bestCollapsedLimit;
   const collapsed = state.ui.bestCollapsed;
-  const toShow =
-    collapsed && best.length > limit ? best.slice(0, limit) : best;
+  const toShow = collapsed && best.length > limit ? best.slice(0, limit) : best;
 
   for (const a of toShow)
-    listEl.appendChild(renderAttractionCard(a, { compact: true, showZeroWait: true }));
+    listEl.appendChild(
+      renderAttractionCard(a, { compact: true, showZeroWait: true }),
+    );
 
   if (toggleEl && best.length > limit) {
     toggleEl.style.display = "block";
@@ -641,7 +718,9 @@ function renderMaintOrIssueCard() {
     collapsed && issues.length > limit ? issues.slice(0, limit) : issues;
 
   for (const a of toShow)
-    listEl.appendChild(renderAttractionCard(a, { compact: false, noAction: true }));
+    listEl.appendChild(
+      renderAttractionCard(a, { compact: false, noAction: true }),
+    );
 
   if (toggleEl && issues.length > limit) {
     toggleEl.style.display = "block";
@@ -664,7 +743,9 @@ function renderAttractions() {
   const emptyEl = document.getElementById("ppgwt-attractionsEmpty");
   if (!el || !emptyEl) return;
 
-  const list = applyGlobalFilters(state.normalized?.attractions || []).sort(sortByHipLongestWait);
+  const list = applyGlobalFilters(state.normalized?.attractions || []).sort(
+    sortByHipLongestWait,
+  );
   el.innerHTML = "";
   if (!list.length) {
     emptyEl.style.display = "block";
@@ -675,10 +756,10 @@ function renderAttractions() {
     el.appendChild(renderAttractionCard(a, { compact: false }));
 }
 
-/** =========================
- * CARDS
- * ========================= */
-function renderAttractionCard(item, { compact, noAction = false, showZeroWait = false } = {}) {
+function renderAttractionCard(
+  item,
+  { compact, noAction = false, showZeroWait = false } = {},
+) {
   const fav = isFavorite(item.Id);
 
   const card = document.createElement("div");
@@ -690,7 +771,9 @@ function renderAttractionCard(item, { compact, noAction = false, showZeroWait = 
   const name = document.createElement("div");
   name.className = "ppgwt__name";
   const safeName = escapeHtml(item.Name || item.Id || "-");
-  name.innerHTML = item.url ? `<a class="ppgwt__link" href="${escapeAttr(item.url)}">${safeName}</a>` : safeName;
+  name.innerHTML = item.url
+    ? `<a class="ppgwt__link" href="${escapeAttr(item.url)}">${safeName}</a>`
+    : safeName;
 
   let srLine = null;
   let srTag = null;
@@ -753,10 +836,14 @@ function renderAttractionCard(item, { compact, noAction = false, showZeroWait = 
     if (compact) {
       actionBtn.className = "ppgwt__trashBtn";
       actionBtn.setAttribute("aria-label", "Verwijder uit favorieten");
-      actionBtn.innerHTML = '<i class="fas fa-trash-alt" aria-hidden="true"></i>';
+      actionBtn.innerHTML =
+        '<i class="fas fa-trash-alt" aria-hidden="true"></i>';
     } else {
       actionBtn.className = `ppgwt__star ${fav ? "is-on" : ""}`;
-      actionBtn.setAttribute("aria-label", fav ? "Verwijder favoriet" : "Maak favoriet");
+      actionBtn.setAttribute(
+        "aria-label",
+        fav ? "Verwijder favoriet" : "Maak favoriet",
+      );
       actionBtn.innerHTML = fav
         ? '<i class="fas fa-star" aria-hidden="true"></i>'
         : '<i class="far fa-star" aria-hidden="true"></i>';
@@ -773,20 +860,20 @@ function getMaintenanceHint() {
   return "";
 }
 
-/** =========================
- * FILTERS / SORT
- * ========================= */
 function applyGlobalFilters(list) {
   const q = (state.ui.query || "").toLowerCase();
   return list.filter((a) => {
     if (q) {
-      const hay = `${a.Name || ""} ${a.Id || ""} ${a.landName || ""}`.toLowerCase();
+      const hay =
+        `${a.Name || ""} ${a.Id || ""} ${a.landName || ""}`.toLowerCase();
       if (!hay.includes(q)) return false;
     }
     if (state.ui.filterSingleRider && !a.singlerider) return false;
-    if (state.ui.filterMaintOrIssue && !isMaintenanceOrMalfunction(a.State)) return false;
+    if (state.ui.filterMaintOrIssue && !isMaintenanceOrMalfunction(a.State))
+      return false;
     if (typeof state.ui.filterLt === "number") {
-      if (!(typeof a.WaitingTime === "number" && a.WaitingTime >= 0)) return false;
+      if (!(typeof a.WaitingTime === "number" && a.WaitingTime >= 0))
+        return false;
       if (a.WaitingTime >= state.ui.filterLt) return false;
     }
     return true;
@@ -818,9 +905,6 @@ function sortByHipLongestWait(a, b) {
   return (a.Name || "").localeCompare(b.Name || "", CONFIG.locale);
 }
 
-/** =========================
- * BADGES
- * ========================= */
 function badgeClassAttraction(item) {
   if (item.State === "open") return "is-open";
   if (item.State === "gesloten") return "is-closed";
@@ -830,7 +914,10 @@ function badgeClassAttraction(item) {
 function badgeTextAttraction(item, opts) {
   const showZeroWait = opts?.showZeroWait === true;
   if (item.State === "open") {
-    const wt = typeof item.WaitingTime === "number" && item.WaitingTime >= 0 ? item.WaitingTime : null;
+    const wt =
+      typeof item.WaitingTime === "number" && item.WaitingTime >= 0
+        ? item.WaitingTime
+        : null;
     if (wt !== null) return `${wt} min`;
     if (showZeroWait) return "0 min";
     return "Open";
@@ -838,15 +925,17 @@ function badgeTextAttraction(item, opts) {
   return formatStateShort(item.State);
 }
 
-/** =========================
- * CHIPS
- * ========================= */
 function toggleChip(which) {
-  if (which === "maint") state.ui.filterMaintOrIssue = !state.ui.filterMaintOrIssue;
-  if (which === "single") state.ui.filterSingleRider = !state.ui.filterSingleRider;
-  if (which === "lt15") state.ui.filterLt = state.ui.filterLt === 15 ? null : 15;
-  if (which === "lt30") state.ui.filterLt = state.ui.filterLt === 30 ? null : 30;
-  if (which === "lt60") state.ui.filterLt = state.ui.filterLt === 60 ? null : 60;
+  if (which === "maint")
+    state.ui.filterMaintOrIssue = !state.ui.filterMaintOrIssue;
+  if (which === "single")
+    state.ui.filterSingleRider = !state.ui.filterSingleRider;
+  if (which === "lt15")
+    state.ui.filterLt = state.ui.filterLt === 15 ? null : 15;
+  if (which === "lt30")
+    state.ui.filterLt = state.ui.filterLt === 30 ? null : 30;
+  if (which === "lt60")
+    state.ui.filterLt = state.ui.filterLt === 60 ? null : 60;
 }
 
 function syncChipUI() {
@@ -864,24 +953,12 @@ function syncChipUI() {
   });
 }
 
-/** =========================
- * FAVORITES
- * ========================= */
-function loadFavorites() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEYS.favorites);
-    if (!raw) return CONFIG.defaultFavoriteIds.slice();
-    const arr = JSON.parse(raw);
-    if (!Array.isArray(arr)) return CONFIG.defaultFavoriteIds.slice();
-    return arr.map((id) => String(id));
-  } catch {
-    return CONFIG.defaultFavoriteIds.slice();
-  }
-}
-
 function saveFavorites() {
   try {
-    localStorage.setItem(STORAGE_KEYS.favorites, JSON.stringify(state.favorites));
+    localStorage.setItem(
+      STORAGE_KEYS.favorites,
+      JSON.stringify(state.favorites),
+    );
   } catch {}
 }
 
@@ -902,13 +979,14 @@ function isFavorite(id) {
   return state.favorites.includes(favId(id));
 }
 
-/** =========================
- * HELPERS
- * ========================= */
 function calculateTotalWaitingTime(attractions) {
   let total = 0;
   for (const a of attractions) {
-    if (a.State === "open" && typeof a.WaitingTime === "number" && a.WaitingTime > 0)
+    if (
+      a.State === "open" &&
+      typeof a.WaitingTime === "number" &&
+      a.WaitingTime > 0
+    )
       total += a.WaitingTime;
   }
   return total;
@@ -916,21 +994,25 @@ function calculateTotalWaitingTime(attractions) {
 
 function formatStateShort(st) {
   switch (st) {
-    case "open": return "Open";
-    case "gesloten": return "Gesloten";
-    default: return "Onbekend";
+    case "open":
+      return "Open";
+    case "gesloten":
+      return "Gesloten";
+    default:
+      return "Onbekend";
   }
-}
-
-function getParkOpeningInfo() {
-  return { openNow: null, fromTo: "", hourFrom: null, hourTo: null };
 }
 
 function getFallbackMessage() {
   const lands = state.data?.lands;
-  if (!state.data || !Array.isArray(lands) || lands.length === 0) return "Data niet beschikbaar";
-  const hasRides = lands.some((l) => Array.isArray(l.rides) && l.rides.length > 0);
-  if (!hasRides) return "Data niet beschikbaar";
+  if (!state.data || !Array.isArray(lands)) return "Data niet beschikbaar";
+  if (lands.length === 0)
+    return "Geen wachttijden beschikbaar (park mogelijk gesloten).";
+  const hasRides = lands.some(
+    (l) => Array.isArray(l.rides) && l.rides.length > 0,
+  );
+  if (!hasRides)
+    return "Geen wachttijden beschikbaar (park mogelijk gesloten).";
   return null;
 }
 
@@ -938,15 +1020,24 @@ function renderFallbackState(message) {
   const root = document.getElementById("ppg-wachttijden");
   if (!root) return;
   const showMuted = message !== "Park gesloten";
-  const displayMessage = message === "Park gesloten" ? "🌙 " + message : message;
-  root.innerHTML = `
-    <div class="ppgwt" style="--ppg-accent:${escapeAttr(CONFIG.accent)};">
-      <div class="ppgwt__card">
-        <h3 class="ppgwt__h3">${escapeHtml(displayMessage)}</h3>
-        ${showMuted ? '<div class="ppgwt__muted">Er is nu niets te tonen. Probeer het later opnieuw.</div>' : ""}
-      </div>
+  const displayMessage =
+    message === "Park gesloten" ? "🌙 " + message : message;
+  const cardHtml = `
+    <div class="ppgwt__card">
+      <h3 class="ppgwt__h3">${escapeHtml(displayMessage)}</h3>
+      ${showMuted ? '<div class="ppgwt__muted">Er is nu niets te tonen. Probeer het later opnieuw.</div>' : ""}
     </div>
   `;
+  const grid = root.querySelector("#ppgwt-grid");
+  if (grid && CONFIG.parkConfigs.length > 1) {
+    grid.innerHTML = cardHtml;
+  } else {
+    root.innerHTML = `
+    <div class="ppgwt" style="--ppg-accent:${escapeAttr(CONFIG.accent)};">
+      ${cardHtml}
+    </div>
+  `;
+  }
 }
 
 function renderErrorState() {

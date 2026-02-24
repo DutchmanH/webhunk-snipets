@@ -13,13 +13,13 @@
     var prefix = base ? base + '/' : '';
     return Promise.all([
       fetch(prefix + 'snippet.html').then(function (r) { return r.text(); }),
-      fetch(prefix + 'snippet.css').then(function (r) { return r.text(); }),
       fetch(prefix + 'snippet.js').then(function (r) { return r.text(); }),
+      fetch(prefix + 'snippet.css').then(function (r) { return r.text(); }),
     ]).then(function (parts) {
       var html = parts[0].trim();
-      var css = parts[1].trim();
-      var js = parts[2].trim();
-      return '<!-- Gegenereerd voor WordPress / Code Snippets - plak als HTML-snippet -->\n' + html + '\n<style>\n' + css + '\n</style>\n<scr' + 'ipt>\n' + js + '\n</scr' + 'ipt>\n';
+      var js = parts[1].trim();
+      var css = parts[2].trim();
+      return '<!-- Gegenereerd voor WordPress / Code Snippets - plak als HTML-snippet -->\n' + html + '\n<scr' + 'ipt>\n' + js + '\n</scr' + 'ipt>\n<style>\n' + css + '\n</style>\n';
     });
   }
 

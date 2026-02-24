@@ -1,6 +1,6 @@
 /* =========================================================
-   Disneyland Parijs Wachttijden – scope onder #ppg-wachttijden
-   Gebaseerd op Efteling snippet (geen tabs in markup)
+   Queue-Times Wachttijden – scope onder #ppg-wachttijden
+   Ondersteunt 1 of 2 park-URLs (tabs bij 2 parken)
    ========================================================= */
 #ppg-wachttijden .ppgwt {
   --accent: var(--ppg-accent);

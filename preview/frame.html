@@ -44,6 +44,17 @@
             })
             .then(function (html) {
               shell.innerHTML = html.trim();
+              if (base === 'pretparkgids/queue-times-wachttijden') {
+                var container = shell.querySelector('#ppg-wachttijden');
+                var api = params.get('api');
+                var api2 = params.get('api2');
+                var api3 = params.get('api3');
+                var baseUrl = 'https://pretparkgids.nl/api/wachttijden/';
+                function toUrl(v) { return v && (v.indexOf('http') === 0 ? v : baseUrl + v.replace(/\.json$/i, '') + '.json'); }
+                if (container && api) container.setAttribute('data-api-url', toUrl(api));
+                if (container && api2) container.setAttribute('data-api-url-2', toUrl(api2));
+                if (container && api3) container.setAttribute('data-api-url-3', toUrl(api3));
+              }
               var link = document.createElement('link');
               link.rel = 'stylesheet';
               link.href = prefix + 'snippet.css' + cacheBust;

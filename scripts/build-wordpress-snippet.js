@@ -46,12 +46,12 @@ const js = read('snippet.js', files.js);
 const output = `<!-- Gegenereerd voor WordPress / Code Snippets - plak als HTML-snippet -->
 <!-- Snippet: ${slug} | Gegenereerd: ${dateStr} -->
 ${html}
-<style>
-${css}
-</style>
 <script>
 ${js}
 </script>
+<style>
+${css}
+</style>
 `;
 
 fs.writeFileSync(outFile, output, 'utf8');
